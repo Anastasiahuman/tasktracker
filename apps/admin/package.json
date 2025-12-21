@@ -1,0 +1,11 @@
+{
+  "name": "admin",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "echo 'Admin app coming soon'",
+    "build": "echo 'Admin app coming soon'"
+  }
+}
+
+
