@@ -4,6 +4,8 @@ import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './auth/auth.module';
 import { WorkspacesModule } from './workspaces/workspaces.module';
 import { ActivitiesModule } from './activities/activities.module';
+import { ProjectsModule } from './projects/projects.module';
+import { TasksModule } from './tasks/tasks.module';
 
 @Module({
   imports: [
@@ -11,6 +13,8 @@ import { ActivitiesModule } from './activities/activities.module';
     AuthModule,
     WorkspacesModule,
     ActivitiesModule,
+    ProjectsModule,
+    TasksModule,
   ],
   controllers: [AppController],
   providers: [],

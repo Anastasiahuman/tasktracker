@@ -1,36 +1,186 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Task Tracker Monorepo
 
-## Getting Started
+Монорепо для Task Tracker с Next.js web приложением и NestJS API.
 
-First, run the development server:
+## Структура
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+```
+.
+├── apps/
+│   ├── web/          # Next.js frontend
+│   ├── api/          # NestJS backend
+│   └── admin/        # React Admin backoffice
+├── packages/
+│   └── shared/       # Shared types and utilities
+└── docker-compose.yml
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Требования
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- Node.js >= 18.0.0
+- pnpm >= 8.0.0
+- Docker (для PostgreSQL)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Установка
 
-## Learn More
+```bash
+# Установить pnpm (если не установлен)
+npm install -g pnpm
 
-To learn more about Next.js, take a look at the following resources:
+# Установить зависимости
+pnpm install
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Настройка окружения
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### API
 
-## Deploy on Vercel
+```bash
+# Создать .env для API
+cp apps/api/.env.example apps/api/.env
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Отредактируйте `apps/api/.env`:
+```env
+DATABASE_URL="postgresql://tasktracker:tasktracker@localhost:5432/task_tracker?schema=public"
+PORT=3001
+JWT_SECRET="your-secret-key"
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### Web
+
+```bash
+# Создать .env для Web
+cp apps/web/.env.example apps/web/.env
+```
+
+Отредактируйте `apps/web/.env`:
+```env
+# API Integration
+NEXT_PUBLIC_USE_API=false  # true для использования API, false для localStorage
+NEXT_PUBLIC_API_URL=http://localhost:3001
+```
+
+## Запуск
+
+### 1. Запустить PostgreSQL
+
+```bash
+# В корне монорепо
+docker-compose up -d
+```
+
+### 2. Выполнить миграции Prisma
+
+```bash
+cd apps/api
+pnpm prisma generate
+pnpm prisma migrate dev --name init
+```
+
+### 3. Запустить API сервер
+
+```bash
+# В корне монорепо
+pnpm dev:api
+
+# Или из apps/api
+cd apps/api
+pnpm start:dev
+```
+
+API будет доступен на `http://localhost:3001`
+
+### 4. Запустить Web приложение
+
+```bash
+# В корне монорепо (в другом терминале)
+pnpm dev:web
+
+# Или из apps/web
+cd apps/web
+pnpm dev
+```
+
+Web будет доступен на `http://localhost:3000`
+
+### 5. Запустить Admin (React Admin)
+
+```bash
+# Создать .env для admin
+cp apps/admin/.env.example apps/admin/.env
+
+# Запустить (в корне монорепо, в третьем терминале)
+pnpm dev:admin
+
+# Или из apps/admin
+cd apps/admin
+pnpm dev
+```
+
+Admin будет доступен на `http://localhost:3002`
+
+**Настройка Admin:**
+- Убедитесь, что `VITE_API_URL=http://localhost:3001` в `apps/admin/.env`
+- Admin требует запущенный API сервер
+- Для входа используйте dev-login (email + name)
+
+## Режимы работы Web приложения
+
+### LocalStorage режим (по умолчанию)
+
+```env
+NEXT_PUBLIC_USE_API=false
+```
+
+- Работает полностью автономно
+- Данные хранятся в браузере (localStorage)
+- Не требует API сервер
+- Идеально для разработки UI
+
+### API режим
+
+```env
+NEXT_PUBLIC_USE_API=true
+NEXT_PUBLIC_API_URL=http://localhost:3001
+```
+
+- Подключается к NestJS API
+- Требует авторизацию (dev-login)
+- Требует выбора workspace
+- Данные хранятся в PostgreSQL
+
+## Workflow для API режима
+
+1. Запустить API сервер (`pnpm dev:api`)
+2. Запустить Web (`pnpm dev:web`)
+3. Открыть `http://localhost:3000`
+4. Перейти на `/login` (автоматически при первом визите)
+5. Ввести email и name → Dev Login
+6. Выбрать или создать workspace на `/workspace`
+7. Использовать приложение как обычно
+
+## Переключение между режимами
+
+Можно переключаться между localStorage и API режимами без перезапуска:
+- Измените `NEXT_PUBLIC_USE_API` в `.env`
+- Перезапустите dev server
+- Приложение автоматически использует нужный режим
+
+## Документация
+
+- API документация: `apps/api/README.md`
+- API примеры: `apps/api/API_EXAMPLES.md`
+- Admin документация: `apps/admin/README.md`
+
+## Admin (React Admin)
+
+Admin приложение предоставляет backoffice для управления:
+- **Workspaces** - управление рабочими пространствами
+- **Users** - просмотр пользователей
+- **Memberships** - управление членством в workspace
+- **Projects** - управление проектами
+- **Tasks** - управление задачами (с фильтрами и поиском)
+- **Activities** - просмотр активности
+
+Подробнее см. `apps/admin/README.md`

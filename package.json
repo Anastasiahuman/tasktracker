@@ -5,6 +5,7 @@
   "scripts": {
     "dev:web": "pnpm --filter web dev",
     "dev:api": "pnpm --filter api start:dev",
+    "dev:admin": "pnpm --filter admin dev",
     "dev": "pnpm --parallel --filter './apps/*' dev",
     "build": "pnpm --recursive build",
     "lint": "pnpm --recursive lint"

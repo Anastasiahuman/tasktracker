@@ -63,6 +63,20 @@ API будет доступен на `http://localhost:3001`
 - `PATCH /workspaces/:id/members/:memberId` - Изменить роль (OWNER)
 - `GET /workspaces/:id/members` - Список участников (OWNER/ADMIN)
 
+### Projects
+- `GET /projects` - Список projects (React Admin совместимый, требует filter.workspaceId)
+- `POST /projects` - Создать project
+- `GET /projects/:id` - Получить project
+- `PATCH /projects/:id` - Обновить project
+- `DELETE /projects/:id` - Удалить project (soft delete)
+
+### Tasks
+- `GET /tasks` - Список tasks (React Admin совместимый, требует filter.workspaceId)
+- `POST /tasks` - Создать task
+- `GET /tasks/:id` - Получить task
+- `PATCH /tasks/:id` - Обновить task
+- `DELETE /tasks/:id` - Удалить task (soft delete)
+
 ### Health
 - `GET /health` - Health check
 

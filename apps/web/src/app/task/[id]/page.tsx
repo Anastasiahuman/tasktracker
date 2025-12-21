@@ -4,27 +4,61 @@ import { useRouter, useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import TaskForm from "@/components/TaskForm";
 import ConfirmDialog from "@/components/ConfirmDialog";
-import { getTaskById, updateTask, deleteTask } from "@/lib/storage";
+import { tasksRepo } from "@/lib/tasksRepo";
 import { Task, Status, Priority } from "@/types/task";
 import { useToast } from "@/components/ToastProvider";
+import { useAuth } from "@/contexts/AuthContext";
 import Image from "next/image";
+
+const USE_API = process.env.NEXT_PUBLIC_USE_API === "true";
 
 export default function TaskPage() {
   const params = useParams();
   const router = useRouter();
   const { showToast } = useToast();
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
   const [task, setTask] = useState<Task | null>(null);
   const [loading, setLoading] = useState(true);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   useEffect(() => {
-    const id = params.id as string;
-    const foundTask = getTaskById(id);
-    setTask(foundTask);
-    setLoading(false);
-  }, [params.id]);
+    if (USE_API) {
+      if (!authLoading && !isAuthenticated) {
+        router.push("/login");
+        return;
+      }
 
-  const handleSubmit = (values: {
+      if (isAuthenticated) {
+        const workspaceId = localStorage.getItem("task-tracker-workspace-id");
+        if (!workspaceId) {
+          router.push("/workspace");
+          return;
+        }
+      }
+    }
+  }, [USE_API, authLoading, isAuthenticated, router]);
+
+  useEffect(() => {
+    const loadTask = async () => {
+      try {
+        setLoading(true);
+        const id = params.id as string;
+        const foundTask = await tasksRepo.getTask(id);
+        setTask(foundTask);
+      } catch (error: any) {
+        console.error("Failed to load task:", error);
+        showToast("Не удалось загрузить задачу", "error");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (!USE_API || (USE_API && isAuthenticated && !authLoading)) {
+      loadTask();
+    }
+  }, [params.id, USE_API, isAuthenticated, authLoading, showToast]);
+
+  const handleSubmit = async (values: {
     title: string;
     description?: string;
     status: "Backlog" | "In Progress" | "Done";
@@ -34,18 +68,23 @@ export default function TaskPage() {
   }) => {
     if (!task) return;
 
-    const updated = updateTask(task.id, {
-      title: values.title,
-      description: values.description || undefined,
-      status: values.status,
-      priority: values.priority,
-      dueDate: values.dueDate || undefined,
-      tags: values.tags,
-    });
+    try {
+      const updated = await tasksRepo.updateTask(task.id, {
+        title: values.title,
+        description: values.description || undefined,
+        status: values.status,
+        priority: values.priority,
+        dueDate: values.dueDate || undefined,
+        tags: values.tags,
+      });
 
-    if (updated) {
-      showToast("Задача обновлена", "success");
-      router.push("/");
+      if (updated) {
+        showToast("Задача обновлена", "success");
+        router.push("/");
+      }
+    } catch (error: any) {
+      console.error("Failed to update task:", error);
+      showToast("Не удалось обновить задачу", "error");
     }
   };
 
@@ -58,12 +97,17 @@ export default function TaskPage() {
     setShowDeleteConfirm(true);
   };
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (!task) return;
-    const deleted = deleteTask(task.id);
-    if (deleted) {
-      showToast("Задача удалена", "success");
-      router.push("/");
+    try {
+      const deleted = await tasksRepo.deleteTask(task.id);
+      if (deleted) {
+        showToast("Задача удалена", "success");
+        router.push("/");
+      }
+    } catch (error: any) {
+      console.error("Failed to delete task:", error);
+      showToast("Не удалось удалить задачу", "error");
     }
   };
 
