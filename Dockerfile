@@ -1,11 +1,10 @@
-# Multi-stage build для API в monorepo
-FROM node:20-alpine AS base
+# Dockerfile для API в monorepo
+FROM node:20-alpine
 
-# Установка pnpm
+# Установка pnpm глобально
 RUN corepack enable && corepack prepare pnpm@latest --activate
 
-# Установка зависимостей
-FROM base AS deps
+# Устанавливаем рабочую директорию
 WORKDIR /app
 
 # Копируем файлы для установки зависимостей
@@ -16,42 +15,25 @@ COPY packages/shared/package.json ./packages/shared/ 2>/dev/null || true
 # Устанавливаем зависимости
 RUN pnpm install --frozen-lockfile
 
-# Build phase
-FROM base AS build
-WORKDIR /app
-
-# Копируем зависимости
-COPY --from=deps /app/node_modules ./node_modules
-COPY --from=deps /app/apps/api/node_modules ./apps/api/node_modules
-
-# Копируем исходный код
+# Копируем весь исходный код
 COPY . .
 
-# Генерируем Prisma Client
+# Переходим в директорию API
 WORKDIR /app/apps/api
+
+# Генерируем Prisma Client
 RUN pnpm prisma generate
 
 # Собираем API
 RUN pnpm build
 
-# Production phase
-FROM base AS runner
-WORKDIR /app
-
-ENV NODE_ENV=production
-
-# Копируем только необходимые файлы
-COPY --from=build /app/apps/api/dist ./dist
-COPY --from=build /app/apps/api/package.json ./package.json
-COPY --from=build /app/apps/api/prisma ./prisma
-COPY --from=build /app/node_modules ./node_modules
-COPY --from=build /app/apps/api/node_modules ./node_modules
-
 # Применяем миграции
-WORKDIR /app
 RUN pnpm prisma migrate deploy
+
+# Production
+ENV NODE_ENV=production
 
 EXPOSE 3001
 
+# Запускаем приложение
 CMD ["node", "dist/main.js"]
-
