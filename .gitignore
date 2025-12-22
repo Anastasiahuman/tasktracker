@@ -29,6 +29,9 @@ pnpm-debug.log*
 .env.test.local
 .env.production.local
 
+# JWT Secret (опционально, можно оставить для удобства)
+# JWT_SECRET.txt
+
 # Vercel
 .vercel
 
