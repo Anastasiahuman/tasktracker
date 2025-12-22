@@ -1,7 +1,8 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, BadRequestException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma/prisma.service';
 import { User } from '@prisma/client';
+import * as bcrypt from 'bcryptjs';
 
 export interface JwtPayload {
   sub: string;
@@ -71,6 +72,58 @@ export class AuthService {
     return this.prisma.user.findUnique({
       where: { id: userId },
     });
+  }
+
+  async register(email: string, name: string, password: string): Promise<{ user: User; tokens: TokenResponse }> {
+    // Проверка существующего пользователя
+    const existing = await this.prisma.user.findUnique({
+      where: { email },
+    });
+
+    if (existing) {
+      throw new BadRequestException('User with this email already exists');
+    }
+
+    // Хеширование пароля
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Создание пользователя
+    const user = await this.prisma.user.create({
+      data: {
+        email,
+        name,
+        password: hashedPassword,
+      },
+    });
+
+    const tokens = await this.generateTokens(user.id, user.email);
+
+    return { user, tokens };
+  }
+
+  async login(email: string, password: string): Promise<{ user: User; tokens: TokenResponse }> {
+    const user = await this.prisma.user.findUnique({
+      where: { email },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+
+    // Проверка пароля
+    if (!user.password) {
+      throw new UnauthorizedException('User was created without password. Please use dev-login or reset password.');
+    }
+
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+
+    if (!isPasswordValid) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+
+    const tokens = await this.generateTokens(user.id, user.email);
+
+    return { user, tokens };
   }
 }
 

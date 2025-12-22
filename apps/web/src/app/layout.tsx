@@ -3,7 +3,6 @@ import { Baloo_2 } from "next/font/google";
 import "./globals.css";
 import Header from "./components/Header";
 import { ToastProvider } from "../components/ToastProvider";
-import { AuthProvider } from "../contexts/AuthContext";
 
 const baloo2 = Baloo_2({
   variable: "--font-baloo-2",
@@ -22,18 +21,17 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ru">
+    <html lang="ru" suppressHydrationWarning>
       <body
         className={`${baloo2.variable} antialiased bg-background text-foreground`}
+        suppressHydrationWarning
       >
-        <AuthProvider>
-          <ToastProvider>
-            <Header />
-            <main className="container mx-auto px-4 py-8 max-w-7xl">
-              {children}
-            </main>
-          </ToastProvider>
-        </AuthProvider>
+        <ToastProvider>
+          <Header />
+          <main className="container mx-auto px-4 py-8 max-w-7xl">
+            {children}
+          </main>
+        </ToastProvider>
       </body>
     </html>
   );

@@ -9,10 +9,10 @@ export class WorkspaceRoleGuard implements CanActivate {
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();
     const user = request.user;
-    const workspaceId = request.params.id || request.params.workspaceId;
+    const workspaceId = request.params.id || request.body.workspaceId || request.query.workspaceId;
 
-    if (!user || !workspaceId) {
-      throw new ForbiddenException('User or workspace not found');
+    if (!workspaceId) {
+      throw new ForbiddenException('Workspace ID is required');
     }
 
     const membership = await this.prisma.membership.findUnique({
@@ -28,36 +28,26 @@ export class WorkspaceRoleGuard implements CanActivate {
       throw new ForbiddenException('You are not a member of this workspace');
     }
 
-    // Store membership in request for use in controllers
     request.membership = membership;
-    request.workspaceId = workspaceId;
-
     return true;
-  }
-
-  // Static method to check if user has required role
-  static hasRole(membership: { role: MembershipRole }, requiredRoles: MembershipRole[]): boolean {
-    return requiredRoles.includes(membership.role);
   }
 }
 
-// Decorator for required roles
-export const RequireRoles = (...roles: MembershipRole[]) => {
+export function RequireRole(...roles: MembershipRole[]) {
   return (target: any, propertyKey: string, descriptor: PropertyDescriptor) => {
     const originalMethod = descriptor.value;
-
     descriptor.value = async function (...args: any[]) {
-      const request = args[0]?.request || args.find(arg => arg?.membership);
-      const membership = request?.membership;
-
-      if (!membership || !roles.includes(membership.role)) {
-        throw new ForbiddenException(`Required role: ${roles.join(' or ')}`);
+      const request = args.find((arg) => arg && arg.membership);
+      if (!request || !request.membership) {
+        throw new ForbiddenException('Membership not found');
       }
-
+      if (!roles.includes(request.membership.role)) {
+        throw new ForbiddenException('Insufficient permissions');
+      }
       return originalMethod.apply(this, args);
     };
-
     return descriptor;
   };
-};
+}
+
 

@@ -2,20 +2,18 @@ import {
   Controller,
   Get,
   Post,
-  Patch,
-  Delete,
   Body,
   Param,
+  Patch,
+  Delete,
   Query,
-  UseGuards,
   Res,
+  UseGuards,
 } from '@nestjs/common';
 import { Response } from 'express';
 import { ProjectsService } from './projects.service';
 import { AuthGuard } from '../common/guards/auth.guard';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
-import { User } from '@prisma/client';
-import { parseRAQuery, RAListParams } from '../common/utils/ra-list.util';
 
 class CreateProjectDto {
   workspaceId: string;
@@ -33,45 +31,35 @@ class UpdateProjectDto {
 @Controller('projects')
 @UseGuards(AuthGuard)
 export class ProjectsController {
-  constructor(private projectsService: ProjectsService) {}
+  constructor(private readonly projectsService: ProjectsService) {}
 
   @Get()
-  async findAll(
-    @Query() query: any,
-    @CurrentUser() user: User,
-    @Res() res: Response,
-  ) {
-    const params = parseRAQuery(query);
-    const result = await this.projectsService.findAll(user.id, params);
-
+  async findAll(@Query() query: any, @CurrentUser() user: any, @Res() res: Response) {
+    const result = await this.projectsService.findAll(user.id, query);
     res.setHeader('Content-Range', result.contentRange);
     res.setHeader('Access-Control-Expose-Headers', 'Content-Range');
-
     return res.json(result.data);
   }
 
   @Get(':id')
-  async findOne(@Param('id') id: string, @CurrentUser() user: User) {
+  findOne(@Param('id') id: string, @CurrentUser() user: any) {
     return this.projectsService.findOne(id, user.id);
   }
 
   @Post()
-  async create(@Body() dto: CreateProjectDto, @CurrentUser() user: User) {
+  create(@Body() dto: CreateProjectDto, @CurrentUser() user: any) {
     return this.projectsService.create(user.id, dto);
   }
 
   @Patch(':id')
-  async update(
-    @Param('id') id: string,
-    @Body() dto: UpdateProjectDto,
-    @CurrentUser() user: User,
-  ) {
+  update(@Param('id') id: string, @Body() dto: UpdateProjectDto, @CurrentUser() user: any) {
     return this.projectsService.update(id, user.id, dto);
   }
 
   @Delete(':id')
-  async remove(@Param('id') id: string, @CurrentUser() user: User) {
+  remove(@Param('id') id: string, @CurrentUser() user: any) {
     return this.projectsService.remove(id, user.id);
   }
 }
+
 

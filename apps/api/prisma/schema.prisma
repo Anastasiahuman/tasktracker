@@ -38,15 +38,17 @@ model User {
   id        String   @id @default(uuid())
   email     String   @unique
   name      String?
+  password  String?  // Хеш пароля (null для пользователей без пароля, созданных через dev-login)
   role      UserRole @default(MEMBER)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  memberships    Membership[]
-  comments       Comment[]
-  activities     Activity[]
-  assignedTasks  Task[] @relation("AssignedTasks")
-  reportedTasks  Task[] @relation("ReportedTasks")
+  memberships         Membership[]
+  assignedTasks       Task[]       @relation("AssignedTasks")
+  reportedTasks       Task[]       @relation("ReportedTasks")
+  comments            Comment[]
+  activities          Activity[]
+  sentInvitations     Invitation[] @relation("Inviter")
 
   @@map("users")
 }
@@ -61,7 +63,8 @@ model Workspace {
 
   memberships Membership[]
   projects    Project[]
-  tasks        Task[]
+  tasks       Task[]
+  invitations Invitation[]
 
   @@map("workspaces")
 }
@@ -87,9 +90,9 @@ model Project {
   name        String
   key         String
   description String?
-  archivedAt  DateTime?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
+  archivedAt  DateTime?
 
   workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   tasks     Task[]
@@ -111,31 +114,31 @@ model Task {
   estimateMinutes Int?
   assigneeId      String?
   reporterId      String
-  archivedAt      DateTime?
   createdAt       DateTime     @default(now())
   updatedAt       DateTime     @updatedAt
+  archivedAt      DateTime?
 
   workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   project   Project?  @relation(fields: [projectId], references: [id], onDelete: SetNull)
   assignee  User?     @relation("AssignedTasks", fields: [assigneeId], references: [id], onDelete: SetNull)
   reporter  User      @relation("ReportedTasks", fields: [reporterId], references: [id], onDelete: Cascade)
-  labels    TaskLabel[]
-  comments  Comment[]
+
+  comments   Comment[]
   activities Activity[]
+  taskLabels TaskLabel[]
 
   @@map("tasks")
 }
 
 model Label {
   id        String   @id @default(uuid())
-  name      String
+  name      String   @unique
   color     String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  tasks TaskLabel[]
+  taskLabels TaskLabel[]
 
-  @@unique([name])
   @@map("labels")
 }
 
@@ -180,4 +183,21 @@ model Activity {
   @@map("activities")
 }
 
+model Invitation {
+  id          String         @id @default(uuid())
+  workspaceId String
+  email       String
+  role        MembershipRole @default(MEMBER)
+  token       String         @unique
+  invitedById String
+  acceptedAt  DateTime?
+  expiresAt   DateTime
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
 
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  inviter   User      @relation("Inviter", fields: [invitedById], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, email])
+  @@map("invitations")
+}

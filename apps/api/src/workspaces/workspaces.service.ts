@@ -1,22 +1,7 @@
 import { Injectable, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { ActivitiesService } from '../activities/activities.service';
-import { MembershipRole, User } from '@prisma/client';
-
-class CreateWorkspaceDto {
-  name: string;
-  description?: string;
-  slug?: string;
-}
-
-class AddMemberDto {
-  email: string;
-  role?: MembershipRole;
-}
-
-class UpdateMemberRoleDto {
-  role: MembershipRole;
-}
+import { MembershipRole } from '@prisma/client';
 
 @Injectable()
 export class WorkspacesService {
@@ -25,13 +10,11 @@ export class WorkspacesService {
     private activitiesService: ActivitiesService,
   ) {}
 
-  async createWorkspace(userId: string, dto: CreateWorkspaceDto) {
-    const slug = dto.slug || dto.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
-
+  async create(userId: string, name: string) {
+    const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
     const workspace = await this.prisma.workspace.create({
       data: {
-        name: dto.name,
-        description: dto.description,
+        name,
         slug,
         memberships: {
           create: {
@@ -49,62 +32,76 @@ export class WorkspacesService {
       },
     });
 
-    // Audit log
-    await this.activitiesService.logWorkspaceAction(
-      'CREATE',
-      'WORKSPACE',
-      workspace.id,
-      userId,
-      { name: workspace.name, slug: workspace.slug },
-    );
+    await this.activitiesService.logWorkspaceAction('created', 'Workspace', workspace.id, userId, {
+      name: workspace.name,
+    });
 
     return workspace;
   }
 
-  async getUserWorkspaces(userId: string) {
-    const memberships = await this.prisma.membership.findMany({
-      where: { userId },
+  async findAll(userId: string) {
+    return this.prisma.workspace.findMany({
+      where: {
+        memberships: {
+          some: {
+            userId,
+          },
+        },
+      },
       include: {
-        workspace: true,
+        memberships: {
+          include: {
+            user: true,
+          },
+        },
       },
     });
-
-    return memberships.map((m) => ({
-      ...m.workspace,
-      role: m.role,
-    }));
   }
 
-  async addMember(workspaceId: string, userId: string, dto: AddMemberDto) {
-    // Get membership from request (set by WorkspaceRoleGuard)
-    // For now, we'll check it again here
-    const membership = await this.prisma.membership.findUnique({
-      where: {
-        userId_workspaceId: {
-          userId,
-          workspaceId,
+  async findOne(id: string, userId: string) {
+    const workspace = await this.prisma.workspace.findUnique({
+      where: { id },
+      include: {
+        memberships: {
+          include: {
+            user: true,
+          },
         },
       },
     });
 
-    if (!membership || ![MembershipRole.OWNER, MembershipRole.ADMIN].includes(membership.role)) {
-      throw new ForbiddenException('Only OWNER or ADMIN can add members');
+    if (!workspace) {
+      throw new NotFoundException('Workspace not found');
     }
 
-    // Find user by email
-    const targetUser = await this.prisma.user.findUnique({
-      where: { email: dto.email },
+    const membership = workspace.memberships.find((m) => m.userId === userId);
+    if (!membership) {
+      throw new ForbiddenException('You are not a member of this workspace');
+    }
+
+    return workspace;
+  }
+
+  async addMember(workspaceId: string, userId: string, memberEmail: string, role: MembershipRole) {
+    const workspace = await this.findOne(workspaceId, userId);
+    const requesterMembership = workspace.memberships.find((m) => m.userId === userId);
+
+    if (requesterMembership?.role !== MembershipRole.OWNER && requesterMembership?.role !== MembershipRole.ADMIN) {
+      throw new ForbiddenException('Only owners and admins can add members');
+    }
+
+    const member = await this.prisma.user.findUnique({
+      where: { email: memberEmail },
     });
 
-    if (!targetUser) {
+    if (!member) {
       throw new NotFoundException('User not found');
     }
 
-    // Check if already a member
     const existingMembership = await this.prisma.membership.findUnique({
       where: {
         userId_workspaceId: {
-          userId: targetUser.id,
+          userId: member.id,
           workspaceId,
         },
       },
@@ -114,110 +111,77 @@ export class WorkspacesService {
       throw new ForbiddenException('User is already a member');
     }
 
-    const newMembership = await this.prisma.membership.create({
+    const membership = await this.prisma.membership.create({
       data: {
-        userId: targetUser.id,
+        userId: member.id,
         workspaceId,
-        role: dto.role || MembershipRole.MEMBER,
+        role,
       },
       include: {
         user: true,
       },
     });
 
-    // Audit log
-    await this.activitiesService.logWorkspaceAction(
-      'ADD_MEMBER',
-      'MEMBERSHIP',
-      newMembership.id,
-      userId,
-      {
-        workspaceId,
-        memberEmail: dto.email,
-        role: newMembership.role,
-      },
-    );
+    await this.activitiesService.logWorkspaceAction('added_member', 'Membership', membership.id, userId, {
+      memberEmail,
+      role,
+    });
 
-    return newMembership;
+    return membership;
   }
 
-  async updateMemberRole(
-    workspaceId: string,
-    memberId: string,
-    userId: string,
-    dto: UpdateMemberRoleDto,
-  ) {
-    // Check if user is OWNER
+  async updateMemberRole(workspaceId: string, userId: string, memberId: string, role: MembershipRole) {
+    const workspace = await this.findOne(workspaceId, userId);
+    const requesterMembership = workspace.memberships.find((m) => m.userId === userId);
+
+    if (requesterMembership?.role !== MembershipRole.OWNER && requesterMembership?.role !== MembershipRole.ADMIN) {
+      throw new ForbiddenException('Only owners and admins can change roles');
+    }
+
+    if (memberId === userId && role !== MembershipRole.OWNER) {
+      throw new ForbiddenException('Cannot change your own role from owner');
+    }
+
     const membership = await this.prisma.membership.findUnique({
       where: {
         userId_workspaceId: {
-          userId,
+          userId: memberId,
           workspaceId,
         },
       },
     });
 
-    if (!membership || membership.role !== MembershipRole.OWNER) {
-      throw new ForbiddenException('Only OWNER can change member roles');
-    }
-
-    const targetMembership = await this.prisma.membership.findUnique({
-      where: { id: memberId },
-      include: { user: true },
-    });
-
-    if (!targetMembership || targetMembership.workspaceId !== workspaceId) {
+    if (!membership) {
       throw new NotFoundException('Membership not found');
     }
 
     const updated = await this.prisma.membership.update({
-      where: { id: memberId },
-      data: { role: dto.role },
-      include: { user: true },
+      where: {
+        userId_workspaceId: {
+          userId: memberId,
+          workspaceId,
+        },
+      },
+      data: { role },
+      include: {
+        user: true,
+      },
     });
 
-    // Audit log
-    await this.activitiesService.logWorkspaceAction(
-      'UPDATE_ROLE',
-      'MEMBERSHIP',
+    await this.activitiesService.logWorkspaceAction('updated_role', 'Membership', updated.id, userId, {
       memberId,
-      userId,
-      {
-        workspaceId,
-        memberEmail: targetMembership.user.email,
-        oldRole: targetMembership.role,
-        newRole: dto.role,
-      },
-    );
+      role,
+    });
 
     return updated;
   }
 
-  async getWorkspaceMembers(workspaceId: string, userId: string) {
-    // Check if user has permission (OWNER or ADMIN)
-    const membership = await this.prisma.membership.findUnique({
-      where: {
-        userId_workspaceId: {
-          userId,
-          workspaceId,
-        },
-      },
-    });
-
-    if (!membership || ![MembershipRole.OWNER, MembershipRole.ADMIN].includes(membership.role)) {
-      throw new ForbiddenException('Only OWNER or ADMIN can view members');
-    }
-
+  async getMembers(workspaceId: string, userId: string) {
+    await this.findOne(workspaceId, userId);
     return this.prisma.membership.findMany({
       where: { workspaceId },
       include: {
-        user: {
-          select: {
-            id: true,
-            email: true,
-            name: true,
-          },
-        },
+        user: true,
       },
     });
   }

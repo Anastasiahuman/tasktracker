@@ -13,6 +13,7 @@ const taskSchema = z.object({
   priority: z.enum(["Low", "Medium", "High"]),
   dueDate: z.string().optional().or(z.literal("")),
   tags: z.array(z.string().min(1).max(24)).max(10, "Максимум 10 тегов"),
+  assigneeId: z.string().optional(),
 });
 
 type TaskFormData = z.infer<typeof taskSchema>;
@@ -22,6 +23,7 @@ interface TaskFormProps {
   initialValue?: Task;
   onSubmit: (values: TaskFormData) => void;
   onCancel: () => void;
+  members?: Array<{ id: string; name: string; email: string }>; // Список участников workspace
 }
 
 const statusLabels: Record<Status, string> = {
@@ -36,7 +38,7 @@ const priorityLabels: Record<Priority, string> = {
   "High": "Высокий",
 };
 
-export default function TaskForm({ mode, initialValue, onSubmit, onCancel }: TaskFormProps) {
+export default function TaskForm({ mode, initialValue, onSubmit, onCancel, members = [] }: TaskFormProps) {
   const [tagInput, setTagInput] = useState("");
 
   const formatDateForInput = (dateString?: string) => {
@@ -66,6 +68,7 @@ export default function TaskForm({ mode, initialValue, onSubmit, onCancel }: Tas
           priority: initialValue.priority,
           dueDate: formatDateForInput(initialValue.dueDate),
           tags: initialValue.tags || [],
+          assigneeId: initialValue.assigneeId || "",
         }
       : {
           title: "",
@@ -74,6 +77,7 @@ export default function TaskForm({ mode, initialValue, onSubmit, onCancel }: Tas
           priority: "Medium",
           dueDate: "",
           tags: [],
+          assigneeId: "",
     },
   });
 
@@ -177,18 +181,39 @@ export default function TaskForm({ mode, initialValue, onSubmit, onCancel }: Tas
         </div>
       </div>
 
-      {/* Due Date */}
-      <div>
-        <label className="block text-sm font-semibold text-[var(--text)] mb-2">
-          Срок выполнения
-        </label>
-        <input
-          {...register("dueDate")}
-          type="date"
-          className="input-base"
-        />
-        {errors.dueDate && (
-          <p className="error-text">{errors.dueDate.message}</p>
+      {/* Due Date and Assignee */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-semibold text-[var(--text)] mb-2">
+            Срок выполнения
+          </label>
+          <input
+            {...register("dueDate")}
+            type="date"
+            className="input-base"
+          />
+          {errors.dueDate && (
+            <p className="error-text">{errors.dueDate.message}</p>
+          )}
+        </div>
+
+        {members.length > 0 && (
+          <div>
+            <label className="block text-sm font-semibold text-[var(--text)] mb-2">
+              Исполнитель
+            </label>
+            <select
+              {...register("assigneeId")}
+              className="select-base"
+            >
+              <option value="">Не назначен</option>
+              {members.map((member) => (
+                <option key={member.id} value={member.id}>
+                  {member.name || member.email}
+                </option>
+              ))}
+            </select>
+          </div>
         )}
       </div>
 

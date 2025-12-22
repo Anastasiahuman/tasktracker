@@ -7,8 +7,8 @@ node_modules/
 coverage/
 
 # Production
-build/
 dist/
+build/
 .next/
 out/
 
@@ -25,14 +25,12 @@ pnpm-debug.log*
 # Local env files
 .env
 .env*.local
-.env.local
+.env.development.local
+.env.test.local
+.env.production.local
 
 # Vercel
 .vercel
-
-# TypeScript
-*.tsbuildinfo
-next-env.d.ts
 
 # IDE
 .idea/
@@ -42,5 +40,8 @@ next-env.d.ts
 *~
 
 # OS
-.DS_Store
 Thumbs.db
+
+# Logs
+logs/
+*.log

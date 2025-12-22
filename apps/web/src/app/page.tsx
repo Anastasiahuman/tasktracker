@@ -3,16 +3,13 @@
 import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Task, Status, Priority } from "@/types/task";
-import { tasksRepo } from "@/lib/tasksRepo";
+import { loadTasks, updateTask, deleteTask } from "@/lib/storage";
 import { useToast } from "@/components/ToastProvider";
-import { useAuth } from "@/contexts/AuthContext";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import TaskCard from "@/components/TaskCard";
 import TaskRow from "@/components/TaskRow";
 import EmptyState from "@/components/EmptyState";
 import Image from "next/image";
-
-const USE_API = process.env.NEXT_PUBLIC_USE_API === "true";
 
 type ViewMode = "cards" | "compact";
 
@@ -28,9 +25,7 @@ interface Filters {
 export default function Dashboard() {
   const router = useRouter();
   const { showToast } = useToast();
-  const { isAuthenticated, isLoading: authLoading } = useAuth();
   const [tasks, setTasks] = useState<Task[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [deleteConfirm, setDeleteConfirm] = useState<{ id: string; title: string } | null>(null);
   const [filters, setFilters] = useState<Filters>(() => {
     if (typeof window !== "undefined") {
@@ -55,53 +50,11 @@ export default function Dashboard() {
     return "cards";
   });
 
-  // Check API requirements
-  useEffect(() => {
-    if (USE_API) {
-      if (!authLoading && !isAuthenticated) {
-        router.push("/login");
-        return;
-      }
-
-      if (isAuthenticated) {
-        const workspaceId = localStorage.getItem("task-tracker-workspace-id");
-        if (!workspaceId) {
-          router.push("/workspace");
-          return;
-        }
-      }
-    }
-  }, [USE_API, authLoading, isAuthenticated, router]);
-
   // Load tasks on mount
   useEffect(() => {
-    const loadTasks = async () => {
-      try {
-        setIsLoading(true);
-        const workspaceId = USE_API ? localStorage.getItem("task-tracker-workspace-id") : undefined;
-        const result = await tasksRepo.listTasks({
-          workspaceId,
-          status: filters.status !== "All" ? filters.status : undefined,
-          priority: filters.priority !== "All" ? filters.priority : undefined,
-          search: filters.search || undefined,
-        });
-        setTasks(result.data);
-      } catch (error: any) {
-        console.error("Failed to load tasks:", error);
-        if (error.message?.includes("API")) {
-          showToast("API unavailable", "error");
-        }
-        // Fallback to empty array
-        setTasks([]);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    if (!USE_API || (USE_API && isAuthenticated && !authLoading)) {
-      loadTasks();
-    }
-  }, [USE_API, isAuthenticated, authLoading]);
+    const loaded = loadTasks();
+    setTasks(loaded);
+  }, []);
 
   // Save filters to localStorage
   useEffect(() => {
@@ -117,14 +70,8 @@ export default function Dashboard() {
     }
   }, [viewMode]);
 
-  // Filter tasks (for localStorage mode, API mode filters on server)
+  // Filter tasks
   const filteredTasks = useMemo(() => {
-    if (USE_API) {
-      // API mode: filtering is done server-side, just return tasks
-      return tasks;
-    }
-
-    // LocalStorage mode: filter client-side
     return tasks.filter((task) => {
       // Search filter
       if (filters.search) {
@@ -159,24 +106,11 @@ export default function Dashboard() {
     };
   }, [tasks]);
 
-  const handleUpdateTask = async (taskId: string, status: Status) => {
-    try {
-      const updated = await tasksRepo.updateTask(taskId, { status });
-      if (updated) {
-        // Reload tasks
-        const workspaceId = USE_API ? localStorage.getItem("task-tracker-workspace-id") : undefined;
-        const result = await tasksRepo.listTasks({
-          workspaceId,
-          status: filters.status !== "All" ? filters.status : undefined,
-          priority: filters.priority !== "All" ? filters.priority : undefined,
-          search: filters.search || undefined,
-        });
-        setTasks(result.data);
-        showToast("Статус обновлен", "success");
-      }
-    } catch (error: any) {
-      console.error("Failed to update task:", error);
-      showToast("Не удалось обновить задачу", "error");
+  const handleUpdateTask = (taskId: string, status: Status) => {
+    const updated = updateTask(taskId, { status });
+    if (updated) {
+      setTasks(loadTasks());
+      showToast("Статус обновлен", "success");
     }
   };
 
@@ -187,77 +121,19 @@ export default function Dashboard() {
     }
   };
 
-  const confirmDelete = async () => {
+  const confirmDelete = () => {
     if (deleteConfirm) {
-      try {
-        const deleted = await tasksRepo.deleteTask(deleteConfirm.id);
-        if (deleted) {
-          // Reload tasks
-          const workspaceId = USE_API ? localStorage.getItem("task-tracker-workspace-id") : undefined;
-          const result = await tasksRepo.listTasks({
-            workspaceId,
-            status: filters.status !== "All" ? filters.status : undefined,
-            priority: filters.priority !== "All" ? filters.priority : undefined,
-            search: filters.search || undefined,
-          });
-          setTasks(result.data);
-          showToast("Задача удалена", "success");
-        }
-      } catch (error: any) {
-        console.error("Failed to delete task:", error);
-        showToast("Не удалось удалить задачу", "error");
-      } finally {
-        setDeleteConfirm(null);
+      if (deleteTask(deleteConfirm.id)) {
+        setTasks(loadTasks());
+        showToast("Задача удалена", "success");
       }
+      setDeleteConfirm(null);
     }
   };
 
-  const handleResetFilters = async () => {
+  const handleResetFilters = () => {
     setFilters({ search: "", status: "All", priority: "All" });
-    
-    // Reload tasks with reset filters
-    try {
-      const workspaceId = USE_API ? localStorage.getItem("task-tracker-workspace-id") : undefined;
-      const result = await tasksRepo.listTasks({
-        workspaceId,
-      });
-      setTasks(result.data);
-    } catch (error: any) {
-      console.error("Failed to reload tasks:", error);
-    }
   };
-
-  // Reload tasks when filters change (for API mode)
-  useEffect(() => {
-    if (USE_API && isAuthenticated && !authLoading) {
-      const loadTasks = async () => {
-        try {
-          const workspaceId = localStorage.getItem("task-tracker-workspace-id");
-          if (!workspaceId) return;
-
-          const result = await tasksRepo.listTasks({
-            workspaceId,
-            status: filters.status !== "All" ? filters.status : undefined,
-            priority: filters.priority !== "All" ? filters.priority : undefined,
-            search: filters.search || undefined,
-          });
-          setTasks(result.data);
-        } catch (error: any) {
-          console.error("Failed to load tasks:", error);
-        }
-      };
-
-      loadTasks();
-    }
-  }, [filters, USE_API, isAuthenticated, authLoading]);
-
-  if (isLoading || (USE_API && authLoading)) {
-    return (
-      <div className="w-full flex items-center justify-center py-16">
-        <div className="text-[var(--text)]">Загрузка...</div>
-      </div>
-    );
-  }
 
   return (
     <div className="w-full">

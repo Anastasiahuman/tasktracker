@@ -5,61 +5,66 @@ import { useRouter } from "next/navigation";
 import { useToast } from "@/components/ToastProvider";
 import Image from "next/image";
 
-export default function LoginPage() {
+export default function NewWorkspacePage() {
   const router = useRouter();
   const { showToast } = useToast();
-  const [email, setEmail] = useState("");
   const [name, setName] = useState("");
-  const [loggingIn, setLoggingIn] = useState(false);
+  const [creating, setCreating] = useState(false);
 
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+
+  const getToken = () => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("accessToken");
+    }
+    return null;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!email.trim()) {
-      showToast("Введите email", "error");
+    if (!name.trim()) {
+      showToast("Введите название workspace", "error");
       return;
     }
 
-    setLoggingIn(true);
+    const token = getToken();
+    if (!token) {
+      showToast("Необходима авторизация", "error");
+      router.push("/login");
+      return;
+    }
+
+    setCreating(true);
 
     try {
-      const response = await fetch(`${apiUrl}/auth/dev-login`, {
+      const response = await fetch(`${apiUrl}/workspaces`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({
-          email: email.trim(),
-          name: name.trim() || email.split("@")[0],
-        }),
+        body: JSON.stringify({ name: name.trim() }),
       });
 
       if (response.ok) {
-        const data = await response.json();
+        const workspace = await response.json();
+        showToast("Workspace создан!", "success");
         
-        // Сохраняем токены
+        // Сохраняем выбранный workspace в localStorage
         if (typeof window !== "undefined") {
-          localStorage.setItem("accessToken", data.accessToken);
-          if (data.refreshToken) {
-            localStorage.setItem("refreshToken", data.refreshToken);
-          }
+          localStorage.setItem("selectedWorkspaceId", workspace.id);
         }
-
-        showToast("Успешный вход!", "success");
         
-        // Перенаправляем на главную или на страницу, с которой пришли
-        const returnUrl = new URLSearchParams(window.location.search).get("returnUrl") || "/";
-        router.push(returnUrl);
+        router.push("/");
       } else {
         const error = await response.json();
-        showToast(error.message || "Ошибка при входе", "error");
+        showToast(error.message || "Ошибка при создании workspace", "error");
       }
     } catch (error) {
-      showToast("Ошибка при входе", "error");
+      showToast("Ошибка при создании workspace", "error");
     } finally {
-      setLoggingIn(false);
+      setCreating(false);
     }
   };
 
@@ -77,51 +82,40 @@ export default function LoginPage() {
             />
           </div>
           <h1 className="text-3xl font-bold text-foreground mb-2">
-            Вход в Task Tracker
+            Создать Workspace
           </h1>
           <p className="text-foreground/70">
-            Dev Login - для разработки (без пароля)
+            Workspace - это рабочее пространство для вашей команды и проектов
           </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
             <label className="block text-sm font-semibold text-[var(--text)] mb-2">
-              Email <span className="text-[var(--danger)]">*</span>
-            </label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="input-base"
-              placeholder="user@example.com"
-              required
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-semibold text-[var(--text)] mb-2">
-              Имя (необязательно)
+              Название Workspace <span className="text-[var(--danger)]">*</span>
             </label>
             <input
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
               className="input-base"
-              placeholder="Ваше имя"
+              placeholder="Например: Команда разработки"
+              required
+              minLength={2}
+              maxLength={100}
             />
             <p className="text-sm text-foreground/60 mt-2">
-              Если не указано, будет использована часть email до @
+              Это название будет видно всем участникам workspace
             </p>
           </div>
 
           <div className="flex gap-4 pt-4">
             <button
               type="submit"
-              disabled={loggingIn || !email.trim()}
+              disabled={creating || !name.trim()}
               className="btn-primary flex-1 disabled:opacity-50"
             >
-              {loggingIn ? "Вход..." : "Войти"}
+              {creating ? "Создание..." : "Создать Workspace"}
             </button>
             <button
               type="button"
@@ -138,14 +132,21 @@ export default function LoginPage() {
         <div className="flex items-start gap-3">
           <div className="text-2xl">💡</div>
           <div>
-            <h3 className="font-semibold text-foreground mb-2">Dev Login</h3>
+            <h3 className="font-semibold text-foreground mb-2">Что такое Workspace?</h3>
             <p className="text-sm text-foreground/70">
-              Это упрощенный вход для разработки. Пользователь будет создан автоматически, если его еще нет в системе.
+              Workspace - это изолированное рабочее пространство, где вы можете:
             </p>
+            <ul className="text-sm text-foreground/70 mt-2 space-y-1 list-disc list-inside">
+              <li>Создавать проекты и задачи</li>
+              <li>Приглашать участников команды</li>
+              <li>Управлять правами доступа</li>
+              <li>Организовывать работу команды</li>
+            </ul>
           </div>
         </div>
       </div>
     </div>
   );
 }
+
 

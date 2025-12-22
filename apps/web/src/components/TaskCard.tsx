@@ -171,6 +171,15 @@ export default function TaskCard({ task, onStatusChange, onDelete }: TaskCardPro
         </div>
       )}
 
+      {task.assignee && (
+        <div className="mb-3 flex items-center gap-2 text-sm text-foreground/70">
+          <div className="w-6 h-6 rounded-full bg-pastel-blue flex items-center justify-center text-xs font-semibold text-blue-800">
+            {task.assignee.name.charAt(0).toUpperCase()}
+          </div>
+          <span className="font-medium">{task.assignee.name}</span>
+        </div>
+      )}
+
       {task.tags.length > 0 && (
         <div className="flex flex-wrap gap-2">
           {task.tags.map((tag) => (
