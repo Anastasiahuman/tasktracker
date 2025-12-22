@@ -1,0 +1,17 @@
+node_modules
+dist
+.next
+.git
+.env
+.env.local
+.env.*.local
+*.log
+.DS_Store
+coverage
+.vscode
+.idea
+apps/web/.next
+apps/web/out
+apps/admin/dist
+apps/admin/build
+
