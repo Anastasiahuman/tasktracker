@@ -5,7 +5,7 @@
     "buildCommand": "cd apps/api && pnpm prisma generate && pnpm build"
   },
   "deploy": {
-    "startCommand": "cd apps/api && pnpm prisma migrate deploy && pnpm start:prod",
+    "startCommand": "cd apps/api && pnpm prisma generate && pnpm prisma migrate deploy && pnpm start:prod",
     "restartPolicyType": "ON_FAILURE",
     "restartPolicyMaxRetries": 10
   }
