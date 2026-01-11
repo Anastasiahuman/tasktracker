@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Task, Status, Priority } from "@/types/task";
-import { loadTasks, updateTask, deleteTask } from "@/lib/storage";
+import { getTasks, updateTask as updateTaskAPI, deleteTask as deleteTaskAPI, isAuthenticated } from "@/lib/api";
 import { useToast } from "@/components/ToastProvider";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import TaskCard from "@/components/TaskCard";
@@ -26,6 +26,7 @@ export default function Dashboard() {
   const router = useRouter();
   const { showToast } = useToast();
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [loading, setLoading] = useState(true);
   const [deleteConfirm, setDeleteConfirm] = useState<{ id: string; title: string } | null>(null);
   const [filters, setFilters] = useState<Filters>(() => {
     if (typeof window !== "undefined") {
@@ -52,9 +53,30 @@ export default function Dashboard() {
 
   // Load tasks on mount
   useEffect(() => {
-    const loaded = loadTasks();
-    setTasks(loaded);
-  }, []);
+    if (!isAuthenticated()) {
+      router.push("/login");
+      return;
+    }
+
+    const loadTasksFromAPI = async () => {
+      try {
+        setLoading(true);
+        const loaded = await getTasks();
+        setTasks(loaded);
+      } catch (error: any) {
+        console.error("Error loading tasks:", error);
+        showToast(error.message || "Ошибка загрузки задач", "error");
+        // Если ошибка авторизации, перенаправить на логин
+        if (error.message?.includes("401") || error.message?.includes("Unauthorized")) {
+          router.push("/login");
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadTasksFromAPI();
+  }, [router, showToast]);
 
   // Save filters to localStorage
   useEffect(() => {
@@ -106,11 +128,16 @@ export default function Dashboard() {
     };
   }, [tasks]);
 
-  const handleUpdateTask = (taskId: string, status: Status) => {
-    const updated = updateTask(taskId, { status });
-    if (updated) {
-      setTasks(loadTasks());
+  const handleUpdateTask = async (taskId: string, status: Status) => {
+    try {
+      await updateTaskAPI(taskId, { status });
+      // Обновляем список задач
+      const updated = await getTasks();
+      setTasks(updated);
       showToast("Статус обновлен", "success");
+    } catch (error: any) {
+      console.error("Error updating task:", error);
+      showToast(error.message || "Ошибка обновления задачи", "error");
     }
   };
 
@@ -121,12 +148,19 @@ export default function Dashboard() {
     }
   };
 
-  const confirmDelete = () => {
-    if (deleteConfirm) {
-      if (deleteTask(deleteConfirm.id)) {
-        setTasks(loadTasks());
-        showToast("Задача удалена", "success");
-      }
+  const confirmDelete = async () => {
+    if (!deleteConfirm) return;
+    
+    try {
+      await deleteTaskAPI(deleteConfirm.id);
+      // Обновляем список задач
+      const updated = await getTasks();
+      setTasks(updated);
+      showToast("Задача удалена", "success");
+    } catch (error: any) {
+      console.error("Error deleting task:", error);
+      showToast(error.message || "Ошибка удаления задачи", "error");
+    } finally {
       setDeleteConfirm(null);
     }
   };
@@ -288,7 +322,11 @@ export default function Dashboard() {
       </div>
 
       {/* Список задач */}
-      {filteredTasks.length === 0 ? (
+      {loading ? (
+        <div className="text-center py-12">
+          <div className="text-[var(--text)]/60">Загрузка задач...</div>
+        </div>
+      ) : filteredTasks.length === 0 ? (
         <EmptyState onResetFilters={handleResetFilters} />
       ) : (
         <div

@@ -1,33 +1,49 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import TaskForm from "@/components/TaskForm";
-import { addTask } from "@/lib/storage";
+import { createTask, isAuthenticated } from "@/lib/api";
 import { useToast } from "@/components/ToastProvider";
 
 export default function NewTaskPage() {
   const router = useRouter();
   const { showToast } = useToast();
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (values: {
+  useEffect(() => {
+    if (!isAuthenticated()) {
+      router.push("/login");
+    }
+  }, [router]);
+
+  const handleSubmit = async (values: {
     title: string;
     description?: string;
     status: "Backlog" | "In Progress" | "Done";
     priority: "Low" | "Medium" | "High";
+    category?: string;
     dueDate?: string;
     tags: string[];
   }) => {
-    addTask({
-      title: values.title,
-      description: values.description || undefined,
-      status: values.status,
-      priority: values.priority,
-      dueDate: values.dueDate || undefined,
-      tags: values.tags,
-    });
-
-    showToast("Задача создана", "success");
-    router.push("/");
+    try {
+      setLoading(true);
+      await createTask({
+        title: values.title,
+        description: values.description || undefined,
+        status: values.status,
+        priority: values.priority,
+        category: values.category as any,
+        dueDate: values.dueDate || undefined,
+      });
+      showToast("Задача создана", "success");
+      router.push("/");
+    } catch (error: any) {
+      console.error("Error creating task:", error);
+      showToast(error.message || "Ошибка создания задачи", "error");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleCancel = () => {

@@ -1,28 +1,26 @@
-import { Body, Controller, Get, Post, Req, Res, UseGuards } from '@nestjs/common';
-import { Request, Response } from 'express';
+import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { AuthGuard } from '../common/guards/auth.guard';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
-import { User } from '@prisma/client';
 
 class DevLoginDto {
   email: string;
   name?: string;
 }
 
-class RefreshTokenDto {
-  refreshToken: string;
-}
-
 class RegisterDto {
   email: string;
-  name: string;
   password: string;
+  name?: string;
 }
 
 class LoginDto {
   email: string;
   password: string;
+}
+
+class RefreshTokenDto {
+  refreshToken: string;
 }
 
 @Controller('auth')
@@ -32,7 +30,7 @@ export class AuthController {
   @Post('dev-login')
   async devLogin(@Body() dto: DevLoginDto) {
     const { user, tokens } = await this.authService.devLogin(dto.email, dto.name);
-    
+
     return {
       user: {
         id: user.id,
@@ -46,8 +44,7 @@ export class AuthController {
 
   @Post('register')
   async register(@Body() dto: RegisterDto) {
-    const { user, tokens } = await this.authService.register(dto.email, dto.name, dto.password);
-    
+    const { user, tokens } = await this.authService.register(dto.email, dto.password, dto.name);
     return {
       user: {
         id: user.id,
@@ -62,7 +59,6 @@ export class AuthController {
   @Post('login')
   async login(@Body() dto: LoginDto) {
     const { user, tokens } = await this.authService.login(dto.email, dto.password);
-    
     return {
       user: {
         id: user.id,
@@ -81,7 +77,7 @@ export class AuthController {
 
   @Get('me')
   @UseGuards(AuthGuard)
-  async getMe(@CurrentUser() user: User) {
+  async getMe(@CurrentUser() user: any) {
     return {
       id: user.id,
       email: user.email,
@@ -93,8 +89,11 @@ export class AuthController {
   @Post('logout')
   @UseGuards(AuthGuard)
   async logout() {
-    // In a real app, you might want to blacklist the token
     return { message: 'Logged out successfully' };
   }
 }
+
+
+
+
 

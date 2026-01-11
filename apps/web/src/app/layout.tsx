@@ -21,10 +21,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ru" suppressHydrationWarning>
+    <html lang="ru">
       <body
         className={`${baloo2.variable} antialiased bg-background text-foreground`}
-        suppressHydrationWarning
       >
         <ToastProvider>
           <Header />

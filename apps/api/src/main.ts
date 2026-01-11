@@ -15,7 +15,7 @@ async function bootstrap() {
     origin: allowedOrigins,
     credentials: true,
   });
-  
+
   app.use(cookieParser());
   await app.listen(process.env.PORT || 3001);
   console.log(`🚀 API server is running on http://localhost:${process.env.PORT || 3001}`);
@@ -24,5 +24,8 @@ async function bootstrap() {
   }
 }
 bootstrap();
+
+
+
 
 

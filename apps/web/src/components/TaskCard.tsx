@@ -1,6 +1,6 @@
 "use client";
 
-import { Task, Status, Priority } from "@/types/task";
+import { Task, Status, Priority, CategoryLabels } from "@/types/task";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
@@ -162,21 +162,17 @@ export default function TaskCard({ task, onStatusChange, onDelete }: TaskCardPro
         <span className={`px-3 py-1 rounded-full text-xs font-semibold ${priorityColors[task.priority]}`}>
           {priorityLabels[task.priority]}
         </span>
+        {task.category && (
+          <span className="px-3 py-1 rounded-full text-xs font-semibold bg-pastel-purple text-purple-800">
+            {CategoryLabels[task.category]}
+          </span>
+        )}
       </div>
 
       {task.dueDate && (
         <div className={`mb-3 text-sm font-medium ${isOverdue ? "text-red-600" : "text-foreground/70"}`}>
           📅 {formatDate(task.dueDate)}
           {isOverdue && " (просрочено)"}
-        </div>
-      )}
-
-      {task.assignee && (
-        <div className="mb-3 flex items-center gap-2 text-sm text-foreground/70">
-          <div className="w-6 h-6 rounded-full bg-pastel-blue flex items-center justify-center text-xs font-semibold text-blue-800">
-            {task.assignee.name.charAt(0).toUpperCase()}
-          </div>
-          <span className="font-medium">{task.assignee.name}</span>
         </div>
       )}
 

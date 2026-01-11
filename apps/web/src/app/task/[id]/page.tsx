@@ -4,7 +4,7 @@ import { useRouter, useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import TaskForm from "@/components/TaskForm";
 import ConfirmDialog from "@/components/ConfirmDialog";
-import { getTaskById, updateTask, deleteTask } from "@/lib/storage";
+import { getTaskById, updateTask as updateTaskAPI, deleteTask as deleteTaskAPI, isAuthenticated } from "@/lib/api";
 import { Task, Status, Priority } from "@/types/task";
 import { useToast } from "@/components/ToastProvider";
 import Image from "next/image";
@@ -18,34 +18,58 @@ export default function TaskPage() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   useEffect(() => {
-    const id = params.id as string;
-    const foundTask = getTaskById(id);
-    setTask(foundTask);
-    setLoading(false);
-  }, [params.id]);
+    if (!isAuthenticated()) {
+      router.push("/login");
+      return;
+    }
 
-  const handleSubmit = (values: {
+    const loadTask = async () => {
+      try {
+        const id = params.id as string;
+        const foundTask = await getTaskById(id);
+        if (!foundTask) {
+          showToast("Задача не найдена", "error");
+          router.push("/");
+          return;
+        }
+        setTask(foundTask);
+      } catch (error: any) {
+        console.error("Error loading task:", error);
+        showToast(error.message || "Ошибка загрузки задачи", "error");
+        router.push("/");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadTask();
+  }, [params.id, router, showToast]);
+
+  const handleSubmit = async (values: {
     title: string;
     description?: string;
     status: "Backlog" | "In Progress" | "Done";
     priority: "Low" | "Medium" | "High";
+    category?: string;
     dueDate?: string;
     tags: string[];
   }) => {
     if (!task) return;
 
-    const updated = updateTask(task.id, {
-      title: values.title,
-      description: values.description || undefined,
-      status: values.status,
-      priority: values.priority,
-      dueDate: values.dueDate || undefined,
-      tags: values.tags,
-    });
-
-    if (updated) {
+    try {
+      await updateTaskAPI(task.id, {
+        title: values.title,
+        description: values.description || undefined,
+        status: values.status,
+        priority: values.priority,
+        category: values.category as any,
+        dueDate: values.dueDate || undefined,
+      });
       showToast("Задача обновлена", "success");
       router.push("/");
+    } catch (error: any) {
+      console.error("Error updating task:", error);
+      showToast(error.message || "Ошибка обновления задачи", "error");
     }
   };
 
@@ -58,12 +82,16 @@ export default function TaskPage() {
     setShowDeleteConfirm(true);
   };
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (!task) return;
-    const deleted = deleteTask(task.id);
-    if (deleted) {
+    
+    try {
+      await deleteTaskAPI(task.id);
       showToast("Задача удалена", "success");
       router.push("/");
+    } catch (error: any) {
+      console.error("Error deleting task:", error);
+      showToast(error.message || "Ошибка удаления задачи", "error");
     }
   };
 

@@ -1,7 +1,6 @@
 import { Injectable, UnauthorizedException, BadRequestException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma/prisma.service';
-import { User } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
 
 export interface JwtPayload {
@@ -21,7 +20,7 @@ export class AuthService {
     private jwtService: JwtService,
   ) {}
 
-  async devLogin(email: string, name?: string): Promise<{ user: User; tokens: TokenResponse }> {
+  async devLogin(email: string, name?: string) {
     let user = await this.prisma.user.findUnique({
       where: { email },
     });
@@ -37,6 +36,41 @@ export class AuthService {
 
     const tokens = await this.generateTokens(user.id, user.email);
 
+    return { user, tokens };
+  }
+
+  async register(email: string, password: string, name?: string) {
+    const existing = await this.prisma.user.findUnique({ where: { email } });
+    if (existing) {
+      throw new BadRequestException('User with this email already exists');
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const user = await this.prisma.user.create({
+      data: {
+        email,
+        password: hashedPassword,
+        name: name || email.split('@')[0],
+      },
+    });
+
+    const tokens = await this.generateTokens(user.id, user.email);
+    return { user, tokens };
+  }
+
+  async login(email: string, password: string) {
+    const user = await this.prisma.user.findUnique({ where: { email } });
+    if (!user || !user.password) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+
+    const tokens = await this.generateTokens(user.id, user.email);
     return { user, tokens };
   }
 
@@ -68,62 +102,14 @@ export class AuthService {
     }
   }
 
-  async validateUser(userId: string): Promise<User | null> {
+  async validateUser(userId: string) {
     return this.prisma.user.findUnique({
       where: { id: userId },
     });
   }
-
-  async register(email: string, name: string, password: string): Promise<{ user: User; tokens: TokenResponse }> {
-    // Проверка существующего пользователя
-    const existing = await this.prisma.user.findUnique({
-      where: { email },
-    });
-
-    if (existing) {
-      throw new BadRequestException('User with this email already exists');
-    }
-
-    // Хеширование пароля
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    // Создание пользователя
-    const user = await this.prisma.user.create({
-      data: {
-        email,
-        name,
-        password: hashedPassword,
-      },
-    });
-
-    const tokens = await this.generateTokens(user.id, user.email);
-
-    return { user, tokens };
-  }
-
-  async login(email: string, password: string): Promise<{ user: User; tokens: TokenResponse }> {
-    const user = await this.prisma.user.findUnique({
-      where: { email },
-    });
-
-    if (!user) {
-      throw new UnauthorizedException('Invalid credentials');
-    }
-
-    // Проверка пароля
-    if (!user.password) {
-      throw new UnauthorizedException('User was created without password. Please use dev-login or reset password.');
-    }
-
-    const isPasswordValid = await bcrypt.compare(password, user.password);
-
-    if (!isPasswordValid) {
-      throw new UnauthorizedException('Invalid credentials');
-    }
-
-    const tokens = await this.generateTokens(user.id, user.email);
-
-    return { user, tokens };
-  }
 }
+
+
+
+
 

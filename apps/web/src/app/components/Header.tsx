@@ -1,11 +1,26 @@
 "use client";
 
 import Image from "next/image";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 
 export default function Header() {
   const router = useRouter();
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  useEffect(() => {
+    const token = localStorage.getItem("accessToken");
+    setIsAuthenticated(!!token);
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("refreshToken");
+    localStorage.removeItem("user");
+    setIsAuthenticated(false);
+    router.push("/login");
+  };
 
   return (
     <header className="bg-white soft-shadow-lg sticky top-0 z-50 border-b-4 border-pastel-blue">
@@ -36,54 +51,49 @@ export default function Header() {
               Task Tracker
             </h1>
           </Link>
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => router.push("/workspace/new")}
-              className="btn-primary flex items-center gap-2"
-            >
-              <svg
-                width="20"
-                height="20"
-                viewBox="0 0 20 20"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
+          <div className="flex items-center gap-4">
+            {isAuthenticated ? (
+              <button
+                onClick={handleLogout}
+                className="px-4 py-2 rounded-xl bg-pastel-pink hover:bg-accent-pink text-pink-800 font-semibold transition-colors"
               >
-                <path
-                  d="M10 4V16M4 10H16"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                />
-              </svg>
-              Workspace
-            </button>
+                Выйти
+              </button>
+            ) : (
+              <Link
+                href="/login"
+                className="px-4 py-2 rounded-xl bg-pastel-blue hover:bg-accent-blue text-blue-800 font-semibold transition-colors"
+              >
+                Войти
+              </Link>
+            )}
             <div className="flex items-center gap-2">
               <div className="relative w-14 h-14 rounded-full overflow-hidden bg-pastel-purple p-1">
-              <Image
-                src="/images/Бараш 1.png"
-                alt="Бараш"
-                width={50}
-                height={50}
-                className="rounded-full object-contain"
-              />
-            </div>
-            <div className="relative w-14 h-14 rounded-full overflow-hidden bg-pastel-orange p-1">
-              <Image
-                src="/images/Копатыч 1.png"
-                alt="Копатыч"
-                width={50}
-                height={50}
-                className="rounded-full object-contain"
-              />
-            </div>
-            <div className="relative w-14 h-14 rounded-full overflow-hidden bg-pastel-yellow p-1">
-              <Image
-                src="/images/Карыч 1.png"
-                alt="Карыч"
-                width={50}
-                height={50}
-                className="rounded-full object-contain"
-              />
+                <Image
+                  src="/images/Бараш 1.png"
+                  alt="Бараш"
+                  width={50}
+                  height={50}
+                  className="rounded-full object-contain"
+                />
+              </div>
+              <div className="relative w-14 h-14 rounded-full overflow-hidden bg-pastel-orange p-1">
+                <Image
+                  src="/images/Копатыч 1.png"
+                  alt="Копатыч"
+                  width={50}
+                  height={50}
+                  className="rounded-full object-contain"
+                />
+              </div>
+              <div className="relative w-14 h-14 rounded-full overflow-hidden bg-pastel-yellow p-1">
+                <Image
+                  src="/images/Карыч 1.png"
+                  alt="Карыч"
+                  width={50}
+                  height={50}
+                  className="rounded-full object-contain"
+                />
               </div>
             </div>
           </div>

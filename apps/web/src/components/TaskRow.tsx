@@ -1,6 +1,6 @@
 "use client";
 
-import { Task, Status, Priority } from "@/types/task";
+import { Task, Status, Priority, CategoryLabels } from "@/types/task";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
@@ -67,6 +67,11 @@ export default function TaskRow({ task, onStatusChange, onDelete }: TaskRowProps
           <span className={`text-sm font-bold ${priorityColors[task.priority]}`}>
             {priorityIcons[task.priority]}
           </span>
+          {task.category && (
+            <span className="px-2 py-1 rounded-full text-xs font-semibold bg-pastel-purple text-purple-800">
+              {CategoryLabels[task.category]}
+            </span>
+          )}
         </div>
       </div>
 

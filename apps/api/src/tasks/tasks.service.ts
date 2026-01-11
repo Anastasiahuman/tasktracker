@@ -1,199 +1,149 @@
-import { Injectable, ForbiddenException, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { ActivitiesService } from '../activities/activities.service';
-import { parseRAQuery, buildPrismaQuery, buildContentRange } from '../common/utils/ra-list.util';
-import { TaskStatus, TaskPriority } from '@prisma/client';
-
-class CreateTaskDto {
-  workspaceId: string;
-  projectId?: string;
-  title: string;
-  description?: string;
-  status?: TaskStatus;
-  priority?: TaskPriority;
-  dueDate?: Date;
-  startDate?: Date;
-  estimateMinutes?: number;
-  assigneeId?: string;
-}
-
-class UpdateTaskDto {
-  title?: string;
-  description?: string;
-  status?: TaskStatus;
-  priority?: TaskPriority;
-  dueDate?: Date;
-  startDate?: Date;
-  estimateMinutes?: number;
-  assigneeId?: string;
-  projectId?: string;
-}
+import { TaskCategory, TaskStatus, TaskPriority } from '@prisma/client';
 
 @Injectable()
 export class TasksService {
-  constructor(
-    private prisma: PrismaService,
-    private activitiesService: ActivitiesService,
-  ) {}
+  constructor(private prisma: PrismaService) {}
 
-  async checkWorkspaceAccess(userId: string, workspaceId: string) {
-    const membership = await this.prisma.membership.findUnique({
-      where: {
-        userId_workspaceId: {
-          userId,
-          workspaceId,
-        },
+  async create(workspaceId: string, reporterId: string, data: {
+    projectId?: string;
+    title: string;
+    description?: string;
+    status?: TaskStatus;
+    priority?: TaskPriority;
+    category?: TaskCategory;
+    dueDate?: Date;
+    startDate?: Date;
+    estimateMinutes?: number;
+    assigneeId?: string;
+  }) {
+    return this.prisma.task.create({
+      data: {
+        workspaceId,
+        reporterId,
+        ...data,
       },
-    });
-    if (!membership) {
-      throw new ForbiddenException('You are not a member of this workspace');
-    }
-  }
-
-  async findAll(userId: string, params: any) {
-    const queryParams = parseRAQuery(params);
-    if (!queryParams.filter?.workspaceId) {
-      throw new ForbiddenException('workspaceId is required in filter');
-    }
-    const workspaceId = queryParams.filter.workspaceId;
-    await this.checkWorkspaceAccess(userId, workspaceId);
-
-    const query = buildPrismaQuery(queryParams, ['workspaceId', 'projectId', 'status', 'priority', 'assigneeId']);
-    
-    // Handle search query (q)
-    if (queryParams.filter?.q) {
-      const searchTerm = queryParams.filter.q;
-      query.where = {
-        ...query.where,
-        OR: [
-          { title: { contains: searchTerm, mode: 'insensitive' } },
-          { description: { contains: searchTerm, mode: 'insensitive' } },
-        ],
-      };
-    }
-
-    query.where = {
-      ...query.where,
-      workspaceId,
-      archivedAt: null,
-    };
-
-    const [data, total] = await Promise.all([
-      this.prisma.task.findMany({
-        ...query,
-        include: {
-          assignee: true,
-          reporter: true,
-          project: true,
-        },
-      }),
-      this.prisma.task.count({ where: query.where }),
-    ]);
-
-    const start = queryParams.range?.start ?? 0;
-    const end = start + data.length - 1;
-    const contentRange = buildContentRange(start, end, total, 'tasks');
-    return { data, total, contentRange };
-  }
-
-  async findOne(id: string, userId: string) {
-    const task = await this.prisma.task.findUnique({
-      where: { id },
       include: {
-        assignee: true,
-        reporter: true,
-        project: true,
+        assignee: {
+          select: { id: true, email: true, name: true },
+        },
+        reporter: {
+          select: { id: true, email: true, name: true },
+        },
+        project: {
+          select: { id: true, name: true, key: true },
+        },
       },
     });
+  }
+
+  async findAll(workspaceId: string) {
+    return this.prisma.task.findMany({
+      where: {
+        workspaceId,
+        archivedAt: null,
+      },
+      include: {
+        assignee: {
+          select: { id: true, email: true, name: true },
+        },
+        reporter: {
+          select: { id: true, email: true, name: true },
+        },
+        project: {
+          select: { id: true, name: true, key: true },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  async findOne(id: string, workspaceId: string) {
+    const task = await this.prisma.task.findFirst({
+      where: { id, workspaceId },
+      include: {
+        assignee: {
+          select: { id: true, email: true, name: true },
+        },
+        reporter: {
+          select: { id: true, email: true, name: true },
+        },
+        project: {
+          select: { id: true, name: true, key: true },
+        },
+        comments: {
+          include: {
+            user: {
+              select: { id: true, email: true, name: true },
+            },
+          },
+          orderBy: { createdAt: 'asc' },
+        },
+      },
+    });
+
     if (!task) {
       throw new NotFoundException('Task not found');
     }
-    await this.checkWorkspaceAccess(userId, task.workspaceId);
-    return task;
-  }
-
-  async create(userId: string, dto: CreateTaskDto) {
-    await this.checkWorkspaceAccess(userId, dto.workspaceId);
-
-    if (dto.assigneeId) {
-      await this.checkWorkspaceAccess(dto.assigneeId, dto.workspaceId);
-    }
-
-    if (dto.projectId) {
-      const project = await this.prisma.project.findUnique({
-        where: { id: dto.projectId },
-      });
-      if (!project || project.workspaceId !== dto.workspaceId) {
-        throw new NotFoundException('Project not found in workspace');
-      }
-    }
-
-    const task = await this.prisma.task.create({
-      data: {
-        ...dto,
-        reporterId: userId,
-      },
-      include: {
-        assignee: true,
-        reporter: true,
-        project: true,
-      },
-    });
-
-    await this.activitiesService.logWorkspaceAction('created', 'Task', task.id, userId, {
-      title: task.title,
-      workspaceId: task.workspaceId,
-    });
 
     return task;
   }
 
-  async update(id: string, userId: string, dto: UpdateTaskDto) {
-    const task = await this.findOne(id, userId);
+  async update(id: string, workspaceId: string, userId: string, data: {
+    title?: string;
+    description?: string;
+    status?: TaskStatus;
+    priority?: TaskPriority;
+    category?: TaskCategory;
+    dueDate?: Date;
+    startDate?: Date;
+    estimateMinutes?: number;
+    assigneeId?: string;
+  }) {
+    const task = await this.prisma.task.findFirst({
+      where: { id, workspaceId },
+    });
 
-    if (dto.assigneeId && dto.assigneeId !== task.assigneeId) {
-      await this.checkWorkspaceAccess(dto.assigneeId, task.workspaceId);
+    if (!task) {
+      throw new NotFoundException('Task not found');
     }
 
-    if (dto.projectId && dto.projectId !== task.projectId) {
-      const project = await this.prisma.project.findUnique({
-        where: { id: dto.projectId },
-      });
-      if (!project || project.workspaceId !== task.workspaceId) {
-        throw new NotFoundException('Project not found in workspace');
-      }
-    }
-
-    const updated = await this.prisma.task.update({
+    return this.prisma.task.update({
       where: { id },
-      data: dto,
+      data,
       include: {
-        assignee: true,
-        reporter: true,
-        project: true,
+        assignee: {
+          select: { id: true, email: true, name: true },
+        },
+        reporter: {
+          select: { id: true, email: true, name: true },
+        },
+        project: {
+          select: { id: true, name: true, key: true },
+        },
       },
     });
-
-    await this.activitiesService.logWorkspaceAction('updated', 'Task', updated.id, userId, {
-      title: updated.title,
-    });
-
-    return updated;
   }
 
-  async remove(id: string, userId: string) {
-    const task = await this.findOne(id, userId);
-    const archived = await this.prisma.task.update({
+  async delete(id: string, workspaceId: string, userId: string) {
+    const task = await this.prisma.task.findFirst({
+      where: { id, workspaceId },
+    });
+
+    if (!task) {
+      throw new NotFoundException('Task not found');
+    }
+
+    await this.prisma.task.delete({
       where: { id },
-      data: { archivedAt: new Date() },
     });
 
-    await this.activitiesService.logWorkspaceAction('archived', 'Task', archived.id, userId, {
-      title: archived.title,
-    });
-
-    return archived;
+    return { message: 'Task deleted successfully' };
   }
 }
+
+
+
 
 

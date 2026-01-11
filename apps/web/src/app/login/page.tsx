@@ -2,150 +2,141 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useToast } from "@/components/ToastProvider";
 import Image from "next/image";
 
 export default function LoginPage() {
   const router = useRouter();
-  const { showToast } = useToast();
   const [email, setEmail] = useState("");
-  const [name, setName] = useState("");
-  const [loggingIn, setLoggingIn] = useState(false);
-
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (!email.trim()) {
-      showToast("Введите email", "error");
-      return;
-    }
-
-    setLoggingIn(true);
+    setError("");
+    setLoading(true);
 
     try {
-      const response = await fetch(`${apiUrl}/auth/dev-login`, {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+      const response = await fetch(`${apiUrl}/auth/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          email: email.trim(),
-          name: name.trim() || email.split("@")[0],
-        }),
+        body: JSON.stringify({ email, password }),
       });
 
-      if (response.ok) {
+      if (!response.ok) {
         const data = await response.json();
-        
-        // Сохраняем токены
-        if (typeof window !== "undefined") {
-          localStorage.setItem("accessToken", data.accessToken);
-          if (data.refreshToken) {
-            localStorage.setItem("refreshToken", data.refreshToken);
-          }
-        }
-
-        showToast("Успешный вход!", "success");
-        
-        // Перенаправляем на главную или на страницу, с которой пришли
-        const returnUrl = new URLSearchParams(window.location.search).get("returnUrl") || "/";
-        router.push(returnUrl);
-      } else {
-        const error = await response.json();
-        showToast(error.message || "Ошибка при входе", "error");
+        throw new Error(data.message || "Ошибка входа");
       }
-    } catch (error) {
-      showToast("Ошибка при входе", "error");
+
+      const data = await response.json();
+      
+      // Сохраняем токены
+      localStorage.setItem("accessToken", data.accessToken);
+      localStorage.setItem("refreshToken", data.refreshToken);
+      localStorage.setItem("user", JSON.stringify(data.user));
+
+      // Перенаправляем на главную
+      router.push("/");
+    } catch (err: any) {
+      setError(err.message || "Произошла ошибка при входе");
     } finally {
-      setLoggingIn(false);
+      setLoading(false);
     }
   };
 
   return (
-    <div className="w-full max-w-2xl mx-auto mt-20">
-      <div className="sticker-card bg-white">
-        <div className="text-center mb-6">
-          <div className="mb-4">
-            <Image
-              src="/images/Крош 1.png"
-              alt="Крош"
-              width={100}
-              height={100}
-              className="rounded-full mx-auto"
-            />
+    <div className="min-h-screen bg-background flex items-center justify-center p-4">
+      <div className="sticker-card bg-white max-w-md w-full p-8">
+        <div className="text-center mb-8">
+          <div className="flex items-center justify-center gap-4 mb-4">
+            <div className="relative w-16 h-16 rounded-full overflow-hidden bg-pastel-blue p-1">
+              <Image
+                src="/images/Крош 1.png"
+                alt="Крош"
+                width={60}
+                height={60}
+                className="rounded-full object-contain"
+              />
+            </div>
+            <div className="relative w-16 h-16 rounded-full overflow-hidden bg-pastel-pink p-1">
+              <Image
+                src="/images/Ежик 1.png"
+                alt="Ежик"
+                width={60}
+                height={60}
+                className="rounded-full object-contain"
+              />
+            </div>
           </div>
-          <h1 className="text-3xl font-bold text-foreground mb-2">
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-accent-blue via-accent-pink to-accent-yellow bg-clip-text text-transparent">
             Вход в Task Tracker
           </h1>
-          <p className="text-foreground/70">
-            Dev Login - для разработки (без пароля)
-          </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {error && (
+            <div className="bg-red-50 border-2 border-red-200 text-red-700 px-4 py-3 rounded-2xl">
+              {error}
+            </div>
+          )}
+
           <div>
-            <label className="block text-sm font-semibold text-[var(--text)] mb-2">
-              Email <span className="text-[var(--danger)]">*</span>
+            <label htmlFor="email" className="block text-sm font-semibold text-foreground/70 mb-2">
+              Email
             </label>
             <input
+              id="email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="input-base"
-              placeholder="user@example.com"
               required
+              className="w-full px-4 py-3 rounded-2xl border-2 border-pastel-blue/30 focus:border-accent-blue focus:outline-none transition-colors"
+              placeholder="your@email.com"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-[var(--text)] mb-2">
-              Имя (необязательно)
+            <label htmlFor="password" className="block text-sm font-semibold text-foreground/70 mb-2">
+              Пароль
             </label>
             <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="input-base"
-              placeholder="Ваше имя"
+              id="password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              className="w-full px-4 py-3 rounded-2xl border-2 border-pastel-blue/30 focus:border-accent-blue focus:outline-none transition-colors"
+              placeholder="••••••••"
             />
-            <p className="text-sm text-foreground/60 mt-2">
-              Если не указано, будет использована часть email до @
-            </p>
           </div>
 
-          <div className="flex gap-4 pt-4">
-            <button
-              type="submit"
-              disabled={loggingIn || !email.trim()}
-              className="btn-primary flex-1 disabled:opacity-50"
-            >
-              {loggingIn ? "Вход..." : "Войти"}
-            </button>
-            <button
-              type="button"
-              onClick={() => router.push("/")}
-              className="btn-secondary"
-            >
-              Отмена
-            </button>
-          </div>
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full btn-primary py-3 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {loading ? "Вход..." : "Войти"}
+          </button>
         </form>
-      </div>
 
-      <div className="sticker-card bg-pastel-blue/30 mt-6">
-        <div className="flex items-start gap-3">
-          <div className="text-2xl">💡</div>
-          <div>
-            <h3 className="font-semibold text-foreground mb-2">Dev Login</h3>
-            <p className="text-sm text-foreground/70">
-              Это упрощенный вход для разработки. Пользователь будет создан автоматически, если его еще нет в системе.
-            </p>
-          </div>
+        <div className="mt-6 text-center text-sm text-foreground/70">
+          Нет аккаунта?{" "}
+          <button
+            onClick={() => router.push("/register")}
+            className="text-accent-blue font-semibold hover:underline"
+          >
+            Зарегистрироваться
+          </button>
         </div>
       </div>
     </div>
   );
 }
+
+
+
+
 
