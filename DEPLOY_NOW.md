@@ -15,7 +15,7 @@ git push origin main
 
 Или используйте токен (если нужно):
 ```bash
-git remote set-url origin https://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@github.com/Anastasiahuman/tasktracker.git
+git remote set-url origin https://ghp_XXXXXXXXXXXX@github.com/Anastasiahuman/tasktracker.git
 git push origin main
 git remote set-url origin https://github.com/Anastasiahuman/tasktracker.git
 ```
