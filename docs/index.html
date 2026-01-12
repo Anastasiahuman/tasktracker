@@ -1,17 +1,28 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8" />
-  <title>PRODUCT calculator by Anastasia Amanova</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JTBD Finder by Anastasia Amanova</title>
+    <style>
+        :root {
+            --color-bg: #ffffff;
+            --color-text-primary: #000000;
+            --color-text-secondary: #666666;
+            --color-border: #e5e5e5;
+            --color-accent: #0a0a0a;
+            --color-accent-hover: #333333;
+            --duration-transition: 150ms;
+            --ease-standard: cubic-bezier(0.16, 1, 0.3, 1);
+            --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", sans-serif;
+        }
 
-  <style>
-    :root {
-      --bg: #ffffff;
-      --text: #111111;
-      --muted: #6e6e73;
-      --border: #e5e5ea;
-    }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        html {
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
 
     body {
       margin: 0;
@@ -157,6 +168,7 @@
 <div class="container">
   <h1>PRODUCT calculator by Anastasia Amanova</h1>
   <div class="subtitle">Калькулятор продуктовой и unit-экономики для B2C и B2B</div>
+  <!-- Updated for GitHub Pages -->
 
   <div class="switch">
     <button id="b2cBtn" class="active" onclick="setMode('b2c')">B2C</button>
