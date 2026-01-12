@@ -103,7 +103,7 @@
 
 2. **Build Command:**
    ```
-   npm install --frozen-lockfile && cd apps/api && npm run prisma:generate && npm run build
+   npm install --frozen-lockfile && cd apps/api && npx prisma generate && npm run build
    ```
 
 3. **Start Command:**
@@ -117,8 +117,9 @@
 
 2. **Build Command:**
    ```
-   npm install --frozen-lockfile && cd apps/web && npm run build
+   npm ci && cd apps/web && npm run build
    ```
+   (Или оставьте пустым - Railway определит автоматически для Next.js)
 
 3. **Start Command:**
    ```
