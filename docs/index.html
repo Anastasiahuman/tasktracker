@@ -149,6 +149,32 @@
       font-size: 15px;
     }
 
+    .export-buttons {
+      display: flex;
+      gap: 8px;
+      margin-top: 20px;
+      flex-wrap: wrap;
+    }
+
+    .export-btn {
+      flex: 1;
+      min-width: 120px;
+      padding: 10px 16px;
+      font-size: 14px;
+      border-radius: 8px;
+      border: 1.5px solid #e0e0e0;
+      background: #fff;
+      color: #000;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-weight: 500;
+    }
+
+    .export-btn:hover {
+      border-color: #000;
+      background: #fafafa;
+    }
+
     footer {
       position: fixed;
       bottom: 0;
@@ -191,15 +217,15 @@
     <!-- B2C -->
     <div id="b2cFields">
       <div class="field">
-        <label>Цена продукта (ARPU — средний чек)</label>
+        <label>Цена продукта (ARPU — средний чек), $</label>
         <input type="number" id="price" value="100">
       </div>
       <div class="field">
-        <label>Переменные затраты (COGS)</label>
+        <label>Переменные затраты (COGS), $</label>
         <input type="number" id="cogs" value="30">
       </div>
       <div class="field">
-        <label>CAC (стоимость привлечения клиента)</label>
+        <label>CAC (стоимость привлечения клиента), $</label>
         <input type="number" id="cac">
       </div>
       <div class="field">
@@ -211,7 +237,7 @@
     <!-- B2B -->
     <div id="b2bFields" style="display:none">
       <div class="field">
-        <label>MRR (ежемесячная выручка с одного клиента)</label>
+        <label>MRR (ежемесячная выручка с одного клиента), $</label>
         <input type="number" id="mrr">
       </div>
       <div class="field">
@@ -223,7 +249,7 @@
         <input type="number" id="churn">
       </div>
       <div class="field">
-        <label>CAC (стоимость привлечения клиента)</label>
+        <label>CAC (стоимость привлечения клиента), $</label>
         <input type="number" id="cacB2B">
       </div>
     </div>
@@ -253,6 +279,12 @@
 
     <div class="formula" id="formulaText"></div>
     <div class="conclusion" id="conclusionText"></div>
+
+    <div class="export-buttons">
+      <button class="export-btn" onclick="exportToPDF()">Сохранить PDF</button>
+      <button class="export-btn" onclick="exportToExcel()">Сохранить Excel</button>
+      <button class="export-btn" id="copyBtn" onclick="copyResults()">Копировать</button>
+    </div>
   </div>
 </div>
 
@@ -311,11 +343,140 @@
       else conclusion = "Здоровая unit-экономика. Модель готова к росту.";
     }
 
-    document.getElementById("gross").innerText = gross.toFixed(2);
-    document.getElementById("ltv").innerText = ltv.toFixed(2);
-    document.getElementById("profit").innerText = profit.toFixed(2);
+    document.getElementById("gross").innerText = "$" + gross.toFixed(2);
+    document.getElementById("ltv").innerText = "$" + ltv.toFixed(2);
+    document.getElementById("profit").innerText = "$" + profit.toFixed(2);
     document.getElementById("ratio").innerText = ratio;
     document.getElementById("conclusionText").innerText = conclusion;
+  }
+
+  function getResultsData() {
+    const modeText = mode === 'b2c' ? 'B2C' : 'B2B';
+    const inputs = mode === 'b2c' 
+      ? {
+          'Цена продукта (ARPU), $': document.getElementById("price").value,
+          'Переменные затраты (COGS), $': document.getElementById("cogs").value,
+          'CAC, $': document.getElementById("cac").value,
+          'Lifetime': document.getElementById("lifetime").value
+        }
+      : {
+          'MRR, $': document.getElementById("mrr").value,
+          'Валовая маржа, %': document.getElementById("marginPercent").value,
+          'Churn, %': document.getElementById("churn").value,
+          'CAC, $': document.getElementById("cacB2B").value
+        };
+
+    return {
+      mode: modeText,
+      inputs: inputs,
+      results: {
+        'Валовая маржа': document.getElementById("gross").innerText,
+        'LTV': document.getElementById("ltv").innerText,
+        'Unit profit': document.getElementById("profit").innerText,
+        'LTV / CAC': document.getElementById("ratio").innerText
+      },
+      formula: document.getElementById("formulaText").innerText,
+      conclusion: document.getElementById("conclusionText").innerText
+    };
+  }
+
+  function copyResults() {
+    const data = getResultsData();
+    let text = `PRODUCT Calculator - ${data.mode}\n\n`;
+    text += `Входные данные:\n`;
+    for (const [key, value] of Object.entries(data.inputs)) {
+      text += `${key}: ${value}\n`;
+    }
+    text += `\nРезультаты:\n`;
+    for (const [key, value] of Object.entries(data.results)) {
+      text += `${key}: ${value}\n`;
+    }
+    if (data.formula) text += `\n${data.formula}\n`;
+    if (data.conclusion) text += `\n${data.conclusion}\n`;
+
+    navigator.clipboard.writeText(text).then(() => {
+      const btn = document.getElementById('copyBtn');
+      const originalText = btn.innerText;
+      btn.innerText = 'Скопировано!';
+      setTimeout(() => {
+        btn.innerText = originalText;
+      }, 2000);
+    }).catch(err => {
+      alert('Не удалось скопировать');
+    });
+  }
+
+  function exportToExcel() {
+    const data = getResultsData();
+    let csv = 'Параметр,Значение\n';
+    csv += `Модель,${data.mode}\n\n`;
+    csv += 'Входные данные\n';
+    for (const [key, value] of Object.entries(data.inputs)) {
+      csv += `${key},${value}\n`;
+    }
+    csv += '\nРезультаты\n';
+    for (const [key, value] of Object.entries(data.results)) {
+      csv += `${key},${value}\n`;
+    }
+    if (data.formula) csv += `\nФормула,${data.formula}\n`;
+    if (data.conclusion) csv += `\nВывод,${data.conclusion}\n`;
+
+    const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `unit-economics-${data.mode.toLowerCase()}-${Date.now()}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
+  function exportToPDF() {
+    const data = getResultsData();
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Unit Economics Report</title>
+        <style>
+          body { font-family: Arial, sans-serif; padding: 40px; }
+          h1 { font-size: 24px; margin-bottom: 30px; }
+          h2 { font-size: 18px; margin-top: 20px; margin-bottom: 10px; }
+          table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+          td { padding: 8px; border-bottom: 1px solid #ddd; }
+          td:first-child { font-weight: bold; width: 50%; }
+          .formula { margin-top: 20px; font-style: italic; color: #666; }
+          .conclusion { margin-top: 20px; font-weight: 500; }
+        </style>
+      </head>
+      <body>
+        <h1>PRODUCT Calculator - ${data.mode}</h1>
+        <h2>Входные данные</h2>
+        <table>
+          ${Object.entries(data.inputs).map(([key, value]) => 
+            `<tr><td>${key}</td><td>${value}</td></tr>`
+          ).join('')}
+        </table>
+        <h2>Результаты</h2>
+        <table>
+          ${Object.entries(data.results).map(([key, value]) => 
+            `<tr><td>${key}</td><td>${value}</td></tr>`
+          ).join('')}
+        </table>
+        ${data.formula ? `<div class="formula">${data.formula}</div>` : ''}
+        ${data.conclusion ? `<div class="conclusion">${data.conclusion}</div>` : ''}
+        <p style="margin-top: 40px; color: #999; font-size: 12px;">
+          Generated by PRODUCT calculator by Anastasia Amanova
+        </p>
+      </body>
+      </html>
+    `);
+    printWindow.document.close();
+    setTimeout(() => {
+      printWindow.print();
+    }, 250);
   }
 </script>
 
