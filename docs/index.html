@@ -3,26 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>JTBD Finder by Anastasia Amanova</title>
+    <title>PRODUCT calculator by Anastasia Amanova</title>
     <style>
-        :root {
-            --color-bg: #ffffff;
-            --color-text-primary: #000000;
-            --color-text-secondary: #666666;
-            --color-border: #e5e5e5;
-            --color-accent: #0a0a0a;
-            --color-accent-hover: #333333;
-            --duration-transition: 150ms;
-            --ease-standard: cubic-bezier(0.16, 1, 0.3, 1);
-            --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", sans-serif;
-        }
-
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-
-        html {
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
-        }
 
     body {
       margin: 0;
@@ -62,43 +44,71 @@
 
     .switch {
       display: flex;
-      gap: 8px;
-      margin-bottom: 24px;
+      gap: 0;
+      margin-bottom: 32px;
+      background: #f5f5f5;
+      border-radius: 12px;
+      padding: 4px;
+      position: relative;
     }
 
     .switch button {
       flex: 1;
-      padding: 12px;
-      border-radius: 10px;
-      border: 1px solid var(--border);
-      background: #fff;
+      padding: 14px 20px;
+      border-radius: 8px;
+      border: none;
+      background: transparent;
       cursor: pointer;
       font-size: 15px;
+      font-weight: 500;
+      color: #666;
+      transition: all 0.2s ease;
+      position: relative;
+      z-index: 1;
     }
 
     .switch button.active {
-      border-color: #000;
+      background: #000;
+      color: #fff;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .switch button:not(.active):hover {
       color: #000;
-      font-weight: 500;
     }
 
     .field {
-      margin-bottom: 16px;
+      margin-bottom: 20px;
     }
 
     label {
       display: block;
-      font-size: 14px;
-      color: var(--muted);
-      margin-bottom: 6px;
+      font-size: 13px;
+      color: #666;
+      margin-bottom: 8px;
+      font-weight: 400;
+      letter-spacing: -0.01em;
     }
 
     input {
       width: 100%;
-      padding: 12px 14px;
+      padding: 14px 16px;
       font-size: 16px;
-      border-radius: 10px;
-      border: 1px solid var(--border);
+      border-radius: 8px;
+      border: 1.5px solid #e0e0e0;
+      background: #fff;
+      transition: all 0.2s ease;
+      font-family: inherit;
+    }
+
+    input:focus {
+      outline: none;
+      border-color: #000;
+      background: #fafafa;
+    }
+
+    input:hover:not(:focus) {
+      border-color: #ccc;
     }
 
     .calculate-btn {
