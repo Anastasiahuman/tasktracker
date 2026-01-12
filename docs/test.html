@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Тест инструментов</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, Inter, Helvetica, Arial, sans-serif;
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 20px;
+        }
+        .test-item {
+            padding: 16px;
+            margin: 12px 0;
+            border: 1px solid #e5e5e5;
+            border-radius: 8px;
+        }
+        .test-item.pass {
+            background-color: #d4f4dd;
+            border-color: #28a745;
+        }
+        .test-item.fail {
+            background-color: #ffd6e8;
+            border-color: #dc3545;
+        }
+        .test-item.pending {
+            background-color: #fff4b8;
+            border-color: #ffc107;
+        }
+        button {
+            padding: 8px 16px;
+            margin: 4px;
+            border: 1px solid #000;
+            background: #000;
+            color: white;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #333;
+        }
+    </style>
+</head>
+<body>
+    <h1>Тест инструментов Growth Tools</h1>
+    
+    <div class="test-item pending" id="test-main">
+        <strong>1. Главная страница (index.html)</strong>
+        <div id="test-main-result">Проверка...</div>
+        <button onclick="testMainPage()">Проверить</button>
+    </div>
+
+    <div class="test-item pending" id="test-unit">
+        <strong>2. Unit Economics Calculator</strong>
+        <div id="test-unit-result">Проверка...</div>
+        <button onclick="testUnitCalculator()">Проверить</button>
+    </div>
+
+    <div class="test-item pending" id="test-hypothesis">
+        <strong>3. Growth Hypothesis Generator</strong>
+        <div id="test-hypothesis-result">Проверка...</div>
+        <button onclick="testHypothesisGenerator()">Проверить</button>
+    </div>
+
+    <div class="test-item pending" id="test-jtbd">
+        <strong>4. JTBD Finder</strong>
+        <div id="test-jtbd-result">Проверка...</div>
+        <button onclick="testJTBD()">Проверить</button>
+    </div>
+
+    <div class="test-item pending" id="test-links">
+        <strong>5. Проверка ссылок</strong>
+        <div id="test-links-result">Проверка...</div>
+        <button onclick="testLinks()">Проверить</button>
+    </div>
+
+    <script>
+        async function testMainPage() {
+            const result = document.getElementById('test-main-result');
+            const item = document.getElementById('test-main');
+            try {
+                const response = await fetch('index.html');
+                if (response.ok) {
+                    const html = await response.text();
+                    const hasUnitLink = html.includes('unit-calculator.html');
+                    const hasHypothesisLink = html.includes('hypothesis-generator.html');
+                    const hasJTBDLink = html.includes('jtbd-finder.html');
+                    
+                    if (hasUnitLink && hasHypothesisLink && hasJTBDLink) {
+                        result.textContent = '✓ Все три инструмента присутствуют';
+                        item.className = 'test-item pass';
+                    } else {
+                        result.textContent = '✗ Не все ссылки найдены';
+                        item.className = 'test-item fail';
+                    }
+                } else {
+                    result.textContent = '✗ Файл не найден';
+                    item.className = 'test-item fail';
+                }
+            } catch (e) {
+                result.textContent = '✗ Ошибка: ' + e.message;
+                item.className = 'test-item fail';
+            }
+        }
+
+        async function testUnitCalculator() {
+            const result = document.getElementById('test-unit-result');
+            const item = document.getElementById('test-unit');
+            try {
+                const response = await fetch('unit-calculator.html');
+                if (response.ok) {
+                    const html = await response.text();
+                    const hasCalculate = html.includes('function calculate()');
+                    const hasB2C = html.includes('setMode(\'b2c\')');
+                    const hasB2B = html.includes('setMode(\'b2b\')');
+                    const hasBackLink = html.includes('index.html');
+                    
+                    if (hasCalculate && hasB2C && hasB2B && hasBackLink) {
+                        result.textContent = '✓ Все функции присутствуют, ссылка "Назад" есть';
+                        item.className = 'test-item pass';
+                    } else {
+                        result.textContent = '✗ Не все функции найдены';
+                        item.className = 'test-item fail';
+                    }
+                } else {
+                    result.textContent = '✗ Файл не найден';
+                    item.className = 'test-item fail';
+                }
+            } catch (e) {
+                result.textContent = '✗ Ошибка: ' + e.message;
+                item.className = 'test-item fail';
+            }
+        }
+
+        async function testHypothesisGenerator() {
+            const result = document.getElementById('test-hypothesis-result');
+            const item = document.getElementById('test-hypothesis');
+            try {
+                const response = await fetch('hypothesis-generator.html');
+                if (response.ok) {
+                    const html = await response.text();
+                    const hasGenerate = html.includes('function generateHypotheses()');
+                    const hasWizard = html.includes('wizard-step');
+                    const hasProgress = html.includes('progress-step');
+                    const hasBackLink = html.includes('index.html');
+                    
+                    if (hasGenerate && hasWizard && hasProgress && hasBackLink) {
+                        result.textContent = '✓ Визард и функции присутствуют, ссылка "Назад" есть';
+                        item.className = 'test-item pass';
+                    } else {
+                        result.textContent = '✗ Не все компоненты найдены';
+                        item.className = 'test-item fail';
+                    }
+                } else {
+                    result.textContent = '✗ Файл не найден';
+                    item.className = 'test-item fail';
+                }
+            } catch (e) {
+                result.textContent = '✗ Ошибка: ' + e.message;
+                item.className = 'test-item fail';
+            }
+        }
+
+        async function testJTBD() {
+            const result = document.getElementById('test-jtbd-result');
+            const item = document.getElementById('test-jtbd');
+            try {
+                const response = await fetch('jtbd-finder.html');
+                if (response.ok) {
+                    const html = await response.text();
+                    const hasQuestions = html.includes('const QUESTIONS');
+                    const hasRender = html.includes('function renderHeader');
+                    const hasBackLink = html.includes('index.html') && html.includes('Назад к инструментам');
+                    
+                    if (hasQuestions && hasRender && hasBackLink) {
+                        result.textContent = '✓ Все компоненты присутствуют, ссылка "Назад" есть';
+                        item.className = 'test-item pass';
+                    } else {
+                        result.textContent = '✗ Не все компоненты найдены';
+                        item.className = 'test-item fail';
+                    }
+                } else {
+                    result.textContent = '✗ Файл не найден';
+                    item.className = 'test-item fail';
+                }
+            } catch (e) {
+                result.textContent = '✗ Ошибка: ' + e.message;
+                item.className = 'test-item fail';
+            }
+        }
+
+        async function testLinks() {
+            const result = document.getElementById('test-links-result');
+            const item = document.getElementById('test-links');
+            try {
+                const files = ['index.html', 'unit-calculator.html', 'hypothesis-generator.html', 'jtbd-finder.html'];
+                const results = [];
+                
+                for (const file of files) {
+                    const response = await fetch(file);
+                    results.push({ file, ok: response.ok });
+                }
+                
+                const allOk = results.every(r => r.ok);
+                if (allOk) {
+                    result.textContent = '✓ Все файлы доступны: ' + files.join(', ');
+                    item.className = 'test-item pass';
+                } else {
+                    const failed = results.filter(r => !r.ok).map(r => r.file).join(', ');
+                    result.textContent = '✗ Недоступны: ' + failed;
+                    item.className = 'test-item fail';
+                }
+            } catch (e) {
+                result.textContent = '✗ Ошибка: ' + e.message;
+                item.className = 'test-item fail';
+            }
+        }
+
+        // Автоматический запуск всех тестов
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                testMainPage();
+                testUnitCalculator();
+                testHypothesisGenerator();
+                testJTBD();
+                testLinks();
+            }, 500);
+        });
+    </script>
+</body>
+</html>
+

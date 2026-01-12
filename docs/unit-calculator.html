@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PRODUCT calculator by Anastasia Amanova</title>
+    <style>
+    :root {
+      --bg: #ffffff;
+      --text: #111111;
+      --muted: #6e6e73;
+      --border: #e5e5ea;
+    }
+
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, Inter, Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    .container {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 48px 20px 120px;
+    }
+
+    h1 {
+      font-size: 32px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .subtitle {
+      color: var(--muted);
+      margin-bottom: 32px;
+    }
+
+    .back-link {
+      display: inline-block;
+      margin-bottom: 24px;
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 14px;
+      transition: color 0.2s;
+    }
+
+    .back-link:hover {
+      color: var(--text);
+    }
+
+    .block {
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px;
+      margin-bottom: 24px;
+    }
+
+    h2 {
+      font-size: 20px;
+      margin-bottom: 16px;
+    }
+
+    .switch {
+      display: flex;
+      gap: 0;
+      margin-bottom: 32px;
+      background: #f5f5f5;
+      border-radius: 12px;
+      padding: 4px;
+      position: relative;
+    }
+
+    .switch button {
+      flex: 1;
+      padding: 14px 20px;
+      border-radius: 8px;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      font-size: 15px;
+      font-weight: 500;
+      color: #666;
+      transition: all 0.2s ease;
+      position: relative;
+      z-index: 1;
+    }
+
+    .switch button.active {
+      background: #000;
+      color: #fff;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .switch button:not(.active):hover {
+      color: #000;
+    }
+
+    .field {
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      font-size: 13px;
+      color: #666;
+      margin-bottom: 8px;
+      font-weight: 400;
+      letter-spacing: -0.01em;
+    }
+
+    input {
+      width: 100%;
+      padding: 14px 16px;
+      font-size: 16px;
+      border-radius: 8px;
+      border: 1.5px solid #e0e0e0;
+      background: #fff;
+      transition: all 0.2s ease;
+      font-family: inherit;
+      box-sizing: border-box;
+    }
+
+    input:focus {
+      outline: none;
+      border-color: #000;
+      background: #fafafa;
+    }
+
+    input:hover:not(:focus) {
+      border-color: #ccc;
+    }
+
+    .calculate-btn {
+      width: 100%;
+      padding: 14px;
+      font-size: 16px;
+      border-radius: 12px;
+      border: none;
+      background: #000;
+      color: #fff;
+      cursor: pointer;
+      margin-top: 8px;
+      font-weight: 500;
+    }
+
+    .calculate-btn:hover {
+      opacity: 0.9;
+    }
+
+    .result-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .result-row:last-child {
+      border-bottom: none;
+    }
+
+    .formula {
+      font-size: 14px;
+      color: var(--muted);
+      margin-top: 12px;
+    }
+
+    .conclusion {
+      margin-top: 16px;
+      font-size: 15px;
+    }
+
+    .export-buttons {
+      display: flex;
+      gap: 8px;
+      margin-top: 20px;
+      flex-wrap: wrap;
+    }
+
+    .export-btn {
+      flex: 1;
+      min-width: 120px;
+      padding: 10px 16px;
+      font-size: 14px;
+      border-radius: 8px;
+      border: 1.5px solid #e0e0e0;
+      background: #fff;
+      color: #000;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-weight: 500;
+    }
+
+    .export-btn:hover {
+      border-color: #000;
+      background: #fafafa;
+    }
+
+    footer {
+      position: fixed;
+      bottom: 0;
+      width: 100%;
+      background: #fafafa;
+      border-top: 1px solid var(--border);
+    }
+
+    footer div {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 12px 20px;
+      display: flex;
+      gap: 20px;
+      font-size: 14px;
+    }
+
+    footer a {
+      text-decoration: none;
+      color: var(--muted);
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <a href="index.html" class="back-link">← Назад к инструментам</a>
+  <h1>PRODUCT calculator by Anastasia Amanova</h1>
+  <div class="subtitle">Калькулятор продуктовой и unit-экономики для B2C и B2B</div>
+
+  <div class="switch">
+    <button id="b2cBtn" class="active" onclick="setMode('b2c')">B2C</button>
+    <button id="b2bBtn" onclick="setMode('b2b')">B2B</button>
+  </div>
+
+  <div class="block">
+    <h2>Входные данные</h2>
+
+    <!-- B2C -->
+    <div id="b2cFields">
+      <div class="field">
+        <label>Цена продукта (ARPU — средний чек), $</label>
+        <input type="number" id="price" value="100">
+      </div>
+      <div class="field">
+        <label>Переменные затраты (COGS), $</label>
+        <input type="number" id="cogs" value="30">
+      </div>
+      <div class="field">
+        <label>CAC (стоимость привлечения клиента), $</label>
+        <input type="number" id="cac">
+      </div>
+      <div class="field">
+        <label>Среднее количество покупок или месяцев жизни клиента</label>
+        <input type="number" id="lifetime" value="1">
+      </div>
+    </div>
+
+    <!-- B2B -->
+    <div id="b2bFields" style="display:none">
+      <div class="field">
+        <label>MRR (ежемесячная выручка с одного клиента), $</label>
+        <input type="number" id="mrr">
+      </div>
+      <div class="field">
+        <label>Валовая маржа, %</label>
+        <input type="number" id="marginPercent" value="70">
+      </div>
+      <div class="field">
+        <label>Churn, % (доля клиентов, которые уходят каждый месяц)</label>
+        <input type="number" id="churn">
+      </div>
+      <div class="field">
+        <label>CAC (стоимость привлечения клиента), $</label>
+        <input type="number" id="cacB2B">
+      </div>
+    </div>
+
+    <button class="calculate-btn" onclick="calculate()">Посчитать</button>
+  </div>
+
+  <div class="block">
+    <h2>Результаты</h2>
+
+    <div class="result-row">
+      <div>Валовая маржа</div>
+      <div id="gross">—</div>
+    </div>
+    <div class="result-row">
+      <div>LTV</div>
+      <div id="ltv">—</div>
+    </div>
+    <div class="result-row">
+      <div>Unit profit</div>
+      <div id="profit">—</div>
+    </div>
+    <div class="result-row">
+      <div>LTV / CAC</div>
+      <div id="ratio">—</div>
+    </div>
+
+    <div class="formula" id="formulaText"></div>
+    <div class="conclusion" id="conclusionText"></div>
+
+    <div class="export-buttons">
+      <button class="export-btn" onclick="exportToPDF()">Сохранить PDF</button>
+      <button class="export-btn" onclick="exportToExcel()">Сохранить Excel</button>
+      <button class="export-btn" id="copyBtn" onclick="copyResults()">Копировать</button>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <div>
+    <a href="https://www.linkedin.com/in/anastasia-amanova-ab49997a?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=ios_app" target="_blank">LinkedIn</a>
+    <a href="https://t.me/+gUR1y1nVz6BiOGYy" target="_blank">Telegram</a>
+    <a href="https://youtube.com/@anastasia_human?si=Uu95JpGvw9LjjPb8" target="_blank">YouTube</a>
+  </div>
+</footer>
+
+<script>
+  let mode = 'b2c';
+
+  function setMode(m) {
+    mode = m;
+    document.getElementById("b2cFields").style.display = m === 'b2c' ? 'block' : 'none';
+    document.getElementById("b2bFields").style.display = m === 'b2b' ? 'block' : 'none';
+    document.getElementById("b2cBtn").classList.toggle("active", m === 'b2c');
+    document.getElementById("b2bBtn").classList.toggle("active", m === 'b2b');
+  }
+
+  function calculate() {
+    let gross = 0, ltv = 0, profit = 0, cac = 0, ratio = "—", conclusion = "";
+
+    if (mode === 'b2c') {
+      const price = +document.getElementById("price").value;
+      const cogs = +document.getElementById("cogs").value;
+      const lifetime = +document.getElementById("lifetime").value;
+      cac = +document.getElementById("cac").value;
+
+      gross = price - cogs;
+      ltv = gross * lifetime;
+
+      document.getElementById("formulaText").innerText =
+        "B2C: LTV = (Цена − COGS) × Lifetime";
+    } else {
+      const mrr = +document.getElementById("mrr").value;
+      const margin = +document.getElementById("marginPercent").value / 100;
+      const churn = +document.getElementById("churn").value / 100;
+      cac = +document.getElementById("cacB2B").value;
+
+      gross = mrr * margin;
+      ltv = churn > 0 ? gross / churn : 0;
+
+      document.getElementById("formulaText").innerText =
+        "B2B: LTV = (MRR × Валовая маржа) ÷ Churn";
+    }
+
+    profit = ltv - cac;
+    if (cac > 0) ratio = (ltv / cac).toFixed(2);
+
+    if (ratio !== "—") {
+      if (ratio < 1) conclusion = "Unit-экономика отрицательная. Привлечение клиентов не окупается.";
+      else if (ratio < 3) conclusion = "Unit-экономика на грани. Масштабирование рискованно.";
+      else conclusion = "Здоровая unit-экономика. Модель готова к росту.";
+    }
+
+    document.getElementById("gross").innerText = "$" + gross.toFixed(2);
+    document.getElementById("ltv").innerText = "$" + ltv.toFixed(2);
+    document.getElementById("profit").innerText = "$" + profit.toFixed(2);
+    document.getElementById("ratio").innerText = ratio;
+    document.getElementById("conclusionText").innerText = conclusion;
+  }
+
+  function getResultsData() {
+    const modeText = mode === 'b2c' ? 'B2C' : 'B2B';
+    const inputs = mode === 'b2c' 
+      ? {
+          'Цена продукта (ARPU), $': document.getElementById("price").value,
+          'Переменные затраты (COGS), $': document.getElementById("cogs").value,
+          'CAC, $': document.getElementById("cac").value,
+          'Lifetime': document.getElementById("lifetime").value
+        }
+      : {
+          'MRR, $': document.getElementById("mrr").value,
+          'Валовая маржа, %': document.getElementById("marginPercent").value,
+          'Churn, %': document.getElementById("churn").value,
+          'CAC, $': document.getElementById("cacB2B").value
+        };
+
+    return {
+      mode: modeText,
+      inputs: inputs,
+      results: {
+        'Валовая маржа': document.getElementById("gross").innerText,
+        'LTV': document.getElementById("ltv").innerText,
+        'Unit profit': document.getElementById("profit").innerText,
+        'LTV / CAC': document.getElementById("ratio").innerText
+      },
+      formula: document.getElementById("formulaText").innerText,
+      conclusion: document.getElementById("conclusionText").innerText
+    };
+  }
+
+  function copyResults() {
+    const data = getResultsData();
+    let text = `PRODUCT Calculator - ${data.mode}\n\n`;
+    text += `Входные данные:\n`;
+    for (const [key, value] of Object.entries(data.inputs)) {
+      text += `${key}: ${value}\n`;
+    }
+    text += `\nРезультаты:\n`;
+    for (const [key, value] of Object.entries(data.results)) {
+      text += `${key}: ${value}\n`;
+    }
+    if (data.formula) text += `\n${data.formula}\n`;
+    if (data.conclusion) text += `\n${data.conclusion}\n`;
+
+    navigator.clipboard.writeText(text).then(() => {
+      const btn = document.getElementById('copyBtn');
+      const originalText = btn.innerText;
+      btn.innerText = 'Скопировано!';
+      setTimeout(() => {
+        btn.innerText = originalText;
+      }, 2000);
+    }).catch(err => {
+      alert('Не удалось скопировать');
+    });
+  }
+
+  function exportToExcel() {
+    const data = getResultsData();
+    let csv = 'Параметр,Значение\n';
+    csv += `Модель,${data.mode}\n\n`;
+    csv += 'Входные данные\n';
+    for (const [key, value] of Object.entries(data.inputs)) {
+      csv += `${key},${value}\n`;
+    }
+    csv += '\nРезультаты\n';
+    for (const [key, value] of Object.entries(data.results)) {
+      csv += `${key},${value}\n`;
+    }
+    if (data.formula) csv += `\nФормула,${data.formula}\n`;
+    if (data.conclusion) csv += `\nВывод,${data.conclusion}\n`;
+
+    const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `unit-economics-${data.mode.toLowerCase()}-${Date.now()}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
+  function exportToPDF() {
+    const data = getResultsData();
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Unit Economics Report</title>
+        <style>
+          body { font-family: Arial, sans-serif; padding: 40px; }
+          h1 { font-size: 24px; margin-bottom: 30px; }
+          h2 { font-size: 18px; margin-top: 20px; margin-bottom: 10px; }
+          table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+          td { padding: 8px; border-bottom: 1px solid #ddd; }
+          td:first-child { font-weight: bold; width: 50%; }
+          .formula { margin-top: 20px; font-style: italic; color: #666; }
+          .conclusion { margin-top: 20px; font-weight: 500; }
+        </style>
+      </head>
+      <body>
+        <h1>PRODUCT Calculator - ${data.mode}</h1>
+        <h2>Входные данные</h2>
+        <table>
+          ${Object.entries(data.inputs).map(([key, value]) => 
+            `<tr><td>${key}</td><td>${value}</td></tr>`
+          ).join('')}
+        </table>
+        <h2>Результаты</h2>
+        <table>
+          ${Object.entries(data.results).map(([key, value]) => 
+            `<tr><td>${key}</td><td>${value}</td></tr>`
+          ).join('')}
+        </table>
+        ${data.formula ? `<div class="formula">${data.formula}</div>` : ''}
+        ${data.conclusion ? `<div class="conclusion">${data.conclusion}</div>` : ''}
+        <p style="margin-top: 40px; color: #999; font-size: 12px;">
+          Generated by PRODUCT calculator by Anastasia Amanova
+        </p>
+      </body>
+      </html>
+    `);
+    printWindow.document.close();
+    setTimeout(() => {
+      printWindow.print();
+    }, 250);
+  }
+</script>
+
+</body>
+</html>
+

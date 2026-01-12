@@ -1,0 +1,1143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Growth Hypothesis Generator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #ffffff;
+            --bg-secondary: #f5f5f7;
+            --bg-tertiary: #ebebf0;
+            --text-primary: #1d1d1f;
+            --text-secondary: #86868b;
+            --text-tertiary: #a1a1a6;
+            --border-color: #d5d5d7;
+            --accent-primary: #0071e3;
+            --accent-hover: #0077ed;
+            --accent-active: #006ac1;
+            --success: #34c759;
+            --warning: #ff9500;
+            --error: #ff3b30;
+            --glass-light: rgba(255, 255, 255, 0.8);
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-primary: #1d1d1f;
+                --bg-secondary: #313133;
+                --bg-tertiary: #424245;
+                --text-primary: #f5f5f7;
+                --text-secondary: #a1a1a6;
+                --text-tertiary: #86868b;
+                --border-color: #424245;
+                --accent-primary: #0071e3;
+                --accent-hover: #0077ed;
+                --glass-light: rgba(255, 255, 255, 0.1);
+            }
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-bottom: 24px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 14px;
+            transition: color 0.2s;
+        }
+
+        .back-link:hover {
+            color: var(--text-primary);
+        }
+
+        header {
+            margin-bottom: 40px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 24px;
+        }
+
+        h1 {
+            font-size: 32px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            letter-spacing: -0.02em;
+        }
+
+        .subtitle {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .input-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        @media (max-width: 900px) {
+            .input-section {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        label {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        input, textarea {
+            padding: 12px 14px;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            background-color: var(--bg-secondary);
+            color: var(--text-primary);
+            font-size: 14px;
+            font-family: inherit;
+            transition: border-color 0.2s, background-color 0.2s;
+        }
+
+        input:focus, textarea:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+            background-color: var(--bg-primary);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .metric-input {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .metric-input label {
+            font-size: 12px;
+            margin-bottom: 6px;
+        }
+
+        .metric-input input {
+            font-size: 13px;
+            padding: 10px 12px;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        button {
+            padding: 11px 20px;
+            border: none;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            letter-spacing: -0.02em;
+        }
+
+        .btn-primary {
+            background-color: var(--accent-primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--accent-hover);
+        }
+
+        .btn-primary:active {
+            background-color: var(--accent-active);
+        }
+
+        .btn-secondary {
+            background-color: var(--bg-secondary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+        }
+
+        .btn-secondary:hover {
+            background-color: var(--bg-tertiary);
+        }
+
+        .hypotheses-section {
+            margin-top: 40px;
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            letter-spacing: -0.02em;
+        }
+
+        .hypothesis-card {
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 12px;
+            transition: all 0.2s;
+        }
+
+        .hypothesis-card:hover {
+            border-color: var(--accent-primary);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.08);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 12px;
+        }
+
+        .hypothesis-title {
+            font-size: 15px;
+            font-weight: 600;
+            flex: 1;
+            line-height: 1.5;
+            margin-right: 16px;
+        }
+
+        .rice-score {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 60px;
+            height: 60px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-hover));
+            color: white;
+            font-weight: 700;
+            font-size: 20px;
+            flex-shrink: 0;
+            box-shadow: 0 4px 12px rgba(0, 113, 227, 0.3);
+        }
+
+        .rice-score.low {
+            background: linear-gradient(135deg, #ff9500, #ffb340);
+            box-shadow: 0 4px 12px rgba(255, 149, 0, 0.3);
+        }
+
+        .rice-score.medium {
+            background: linear-gradient(135deg, #34c759, #50e896);
+            box-shadow: 0 4px 12px rgba(52, 199, 89, 0.3);
+        }
+
+        .card-body {
+            margin-bottom: 12px;
+        }
+
+        .hypothesis-description {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+            line-height: 1.6;
+        }
+
+        .rice-breakdown {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            font-size: 12px;
+        }
+
+        .rice-item {
+            background-color: var(--bg-primary);
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+
+        .rice-label {
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            font-size: 11px;
+        }
+
+        .rice-value {
+            font-weight: 700;
+            color: var(--text-primary);
+            font-size: 16px;
+        }
+
+        .card-footer {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .tag {
+            display: inline-block;
+            padding: 6px 12px;
+            background-color: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 12px;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .tag.category {
+            background-color: var(--bg-primary);
+            border-color: var(--accent-primary);
+            color: var(--accent-primary);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-secondary);
+        }
+
+        .empty-icon {
+            font-size: 48px;
+            margin-bottom: 12px;
+        }
+
+        .empty-text {
+            font-size: 14px;
+            margin-bottom: 4px;
+        }
+
+        .sort-controls {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+            align-items: center;
+        }
+
+        .sort-controls label {
+            margin-bottom: 0;
+            margin-right: 8px;
+        }
+
+        select {
+            padding: 10px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background-color: var(--bg-secondary);
+            color: var(--text-primary);
+            font-size: 13px;
+            font-family: inherit;
+            cursor: pointer;
+        }
+
+        select:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+        }
+
+        .stat-bar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .stat-bar-fill {
+            flex: 1;
+            height: 4px;
+            background-color: var(--bg-tertiary);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .stat-bar-inner {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent-primary), var(--accent-hover));
+            border-radius: 2px;
+        }
+
+        .copy-button {
+            padding: 6px 12px;
+            background-color: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: var(--text-primary);
+        }
+
+        .copy-button:hover {
+            background-color: var(--bg-secondary);
+        }
+
+        .copy-button.copied {
+            background-color: var(--success);
+            color: white;
+            border-color: var(--success);
+        }
+
+        .wizard-container {
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        .wizard-step {
+            display: none;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        .wizard-step.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideIn {
+            from { 
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to { 
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .progress-indicator {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            margin-bottom: 40px;
+            position: relative;
+        }
+
+        .progress-indicator::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background-color: var(--border-color);
+            transform: translateY(-50%);
+            z-index: 0;
+        }
+
+        .progress-step {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: var(--bg-secondary);
+            border: 2px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+            z-index: 1;
+            color: var(--text-secondary);
+        }
+
+        .progress-step.active {
+            background-color: var(--accent-primary);
+            border-color: var(--accent-primary);
+            color: white;
+        }
+
+        .progress-step:hover {
+            border-color: var(--accent-primary);
+        }
+
+        textarea {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+        }
+
+        select {
+            padding: 11px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            background-color: var(--bg-secondary);
+            color: var(--text-primary);
+            font-size: 14px;
+            font-family: inherit;
+            cursor: pointer;
+            transition: border-color 0.2s, background-color 0.2s;
+        }
+
+        select:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+            background-color: var(--bg-primary);
+        }
+
+        input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            accent-color: var(--accent-primary);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="index.html" class="back-link">← Назад к инструментам</a>
+        <header>
+            <h1>Growth Hypothesis Generator</h1>
+            <p class="subtitle">Генерируй гипотезы из метрик и расставляй приоритеты по RICE</p>
+        </header>
+
+        <div class="progress-indicator" id="progressIndicator">
+            <div class="progress-step active" onclick="goToStep(1)">1</div>
+            <div class="progress-step" onclick="goToStep(2)">2</div>
+            <div class="progress-step" onclick="goToStep(3)">3</div>
+            <div class="progress-step" onclick="goToStep(4)">4</div>
+        </div>
+
+        <div class="wizard-container" id="wizardContainer">
+            <!-- Step 1: Basic Info -->
+            <div class="wizard-step active" id="step1">
+                <h2 style="font-size: 20px; margin-bottom: 24px; font-weight: 600;">Основная информация о продукте</h2>
+                
+                <div class="input-section">
+                    <div>
+                        <div class="form-group">
+                            <label>Название продукта / приложения</label>
+                            <input type="text" id="productName" placeholder="напр. MyApp, Analytics Dashboard">
+                        </div>
+                        <div class="form-group" style="margin-top: 16px;">
+                            <label>Тип платформы</label>
+                            <select id="platform">
+                                <option value="">Выбери платформу</option>
+                                <option value="web">Web приложение</option>
+                                <option value="mobile">Mobile (нативное iOS/Android)</option>
+                                <option value="hybrid">Hybrid (React Native / Flutter)</option>
+                                <option value="saas">SaaS B2B</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="margin-top: 16px;">
+                            <label>Размер команды разработки</label>
+                            <select id="teamSize">
+                                <option value="">Выбери размер</option>
+                                <option value="solo">1-2 разработчика</option>
+                                <option value="small">3-5 разработчиков</option>
+                                <option value="medium">6-15 разработчиков</option>
+                                <option value="large">15+ разработчиков</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="form-group">
+                            <label>Основная аудитория</label>
+                            <select id="audience">
+                                <option value="">Выбери аудиторию</option>
+                                <option value="b2c-mass">B2C массовая аудитория</option>
+                                <option value="b2c-premium">B2C премиум сегмент</option>
+                                <option value="b2b-sme">B2B малый бизнес</option>
+                                <option value="b2b-enterprise">B2B Enterprise</option>
+                                <option value="mixed">Смешанная аудитория</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="margin-top: 16px;">
+                            <label>Размер DAU / активных пользователей</label>
+                            <select id="userScale">
+                                <option value="">Выбери масштаб</option>
+                                <option value="small">до 10K</option>
+                                <option value="medium">10K - 100K</option>
+                                <option value="large">100K - 1M</option>
+                                <option value="xlarge">1M+</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="button-group">
+                    <button class="btn-primary" onclick="goToStep(2)">Далее → Метрики</button>
+                </div>
+            </div>
+
+            <!-- Step 2: Metrics & Problem -->
+            <div class="wizard-step" id="step2">
+                <h2 style="font-size: 20px; margin-bottom: 24px; font-weight: 600;">Метрики и проблема</h2>
+                
+                <div class="form-group">
+                    <label>Основная метрика которая упала / растёт медленно</label>
+                    <select id="mainMetric">
+                        <option value="">Выбери метрику</option>
+                        <option value="dau">DAU / MAU</option>
+                        <option value="signup">Sign-up / Регистрация</option>
+                        <option value="activation">Activation Rate (% активировавшихся)</option>
+                        <option value="conversion">Conversion Rate / Покупка</option>
+                        <option value="retention">Retention (D1, D7, D30)</option>
+                        <option value="arpu">ARPU / Average Revenue</option>
+                        <option value="feature-adoption">Feature Adoption (% использующих фичу)</option>
+                        <option value="churn">Churn Rate</option>
+                        <option value="ltv">LTV / Customer Lifetime Value</option>
+                    </select>
+                </div>
+
+                <div class="input-section">
+                    <div>
+                        <div class="form-group">
+                            <label>Текущее значение метрики</label>
+                            <input type="number" id="metricValue" placeholder="напр. 50000" step="0.01">
+                        </div>
+                        <div class="form-group" style="margin-top: 16px;">
+                            <label>Целевой прирост (%)</label>
+                            <input type="number" id="targetGrowth" placeholder="напр. 15" value="15" step="0.1">
+                        </div>
+                    </div>
+                    <div>
+                        <div class="form-group">
+                            <label>Подробно опиши проблему</label>
+                            <textarea id="context" placeholder="Где метрика падает? Который сегмент пострадал? Что изменилось? Какие гипотезы уже пробовали?"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="button-group">
+                    <button class="btn-secondary" onclick="goToStep(1)">← Назад</button>
+                    <button class="btn-primary" onclick="goToStep(3)">Далее → Ресурсы</button>
+                </div>
+            </div>
+
+            <!-- Step 3: Resources & Constraints -->
+            <div class="wizard-step" id="step3">
+                <h2 style="font-size: 20px; margin-bottom: 24px; font-weight: 600;">Ресурсы и ограничения</h2>
+                
+                <div class="input-section">
+                    <div>
+                        <div class="form-group">
+                            <label>Доступный бюджет на разработку (часы / спринты)</label>
+                            <select id="budget">
+                                <option value="">Выбери объём</option>
+                                <option value="5">1-2 дня (MVP)</option>
+                                <option value="20">1 неделя</option>
+                                <option value="40">2 недели (спринт)</option>
+                                <option value="80">1 месяц</option>
+                                <option value="unlimited">Неограниченно</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="margin-top: 16px;">
+                            <label>Есть ли доступ к A/B тестированию?</label>
+                            <select id="abTesting">
+                                <option value="">Выбери ответ</option>
+                                <option value="yes">Да, полная инфраструктура</option>
+                                <option value="partial">Частичная инфраструктура</option>
+                                <option value="no">Нет, нужно будет построить</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="form-group">
+                            <label>Есть ли product analytics (Amplitude / Mixpanel / своё)?</label>
+                            <select id="analytics">
+                                <option value="">Выбери ответ</option>
+                                <option value="yes">Да, полная трекировка</option>
+                                <option value="partial">Только базовые события</option>
+                                <option value="no">Нет, нужно добавлять события</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="margin-top: 16px;">
+                            <label>Бизнес приоритеты на этот квартал</label>
+                            <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 8px;">
+                                <label style="display: flex; align-items: center; margin-bottom: 0;">
+                                    <input type="checkbox" id="pri-growth" style="margin-right: 8px;"> Рост юзеров
+                                </label>
+                                <label style="display: flex; align-items: center; margin-bottom: 0;">
+                                    <input type="checkbox" id="pri-retention" style="margin-right: 8px;"> Улучшение Retention
+                                </label>
+                                <label style="display: flex; align-items: center; margin-bottom: 0;">
+                                    <input type="checkbox" id="pri-revenue" style="margin-right: 8px;"> Увеличение выручки
+                                </label>
+                                <label style="display: flex; align-items: center; margin-bottom: 0;">
+                                    <input type="checkbox" id="pri-engagement" style="margin-right: 8px;"> Повышение engagement
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="button-group">
+                    <button class="btn-secondary" onclick="goToStep(2)">← Назад</button>
+                    <button class="btn-primary" onclick="goToStep(4)">Далее → Чем уже пробовали</button>
+                </div>
+            </div>
+
+            <!-- Step 4: Previous Attempts -->
+            <div class="wizard-step" id="step4">
+                <h2 style="font-size: 20px; margin-bottom: 24px; font-weight: 600;">Что уже пробовали</h2>
+                
+                <div class="form-group">
+                    <label>Какие гипотезы / изменения уже были протестированы? (через запятую)</label>
+                    <textarea id="previousAttempts" placeholder="Напр. изменили копирайт онбординга, добавили first-time user tips, изменили ценообразование, запустили email campaign..."></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>Что из этого сработало, что нет?</label>
+                    <textarea id="previousResults" placeholder="Напр. копирайт помог на +5%, tips не помогли, email работал для сегмента X..."></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>Основные боли / паттерны в пользовательском поведении</label>
+                    <textarea id="painPoints" placeholder="Напр. 40% уходят после первого экрана, premium план не берут премиум сегмент, мобильные юзеры менее лояльны..."></textarea>
+                </div>
+
+                <div class="button-group">
+                    <button class="btn-secondary" onclick="goToStep(3)">← Назад</button>
+                    <button class="btn-primary" onclick="generateHypotheses()">Генерировать гипотезы 🚀</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="hypotheses-section" id="hypothesesSection" style="display: none;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2 class="section-title">Сгенерированные гипотезы</h2>
+                <button class="btn-secondary" onclick="resetAndGoBack()" style="padding: 8px 16px; font-size: 12px;">← Назад к вопросам</button>
+            </div>
+
+            <div style="background-color: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 12px; padding: 16px; margin-bottom: 20px;">
+                <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 8px;">🎯 Параметры анализа:</div>
+                <div style="font-size: 13px; color: var(--text-primary);">
+                    <strong id="contextSummary">Продукт • Платформа • Аудитория</strong>
+                </div>
+            </div>
+
+            <div class="sort-controls">
+                <label>Сортировка:</label>
+                <select id="sortBy" onchange="sortHypotheses()">
+                    <option value="rice">RICE (высокий первым)</option>
+                    <option value="impact">Влияние</option>
+                    <option value="reach">Охват</option>
+                    <option value="effort">Трудозатраты (низкие первые)</option>
+                </select>
+                <div style="font-size: 13px; color: var(--text-secondary); margin-left: auto;">
+                    Всего: <strong id="totalCount">0</strong>
+                </div>
+            </div>
+
+            <div id="hypothesesList"></div>
+        </div>
+
+        <div id="emptyState" class="empty-state" style="display: none;">
+            <div class="empty-icon">✨</div>
+            <div class="empty-text">Пока гипотез нет</div>
+            <div style="font-size: 12px; color: var(--text-tertiary);">Заполни данные и нажми «Генерировать гипотезы»</div>
+        </div>
+    </div>
+
+    <script>
+        // Расширенная библиотека гипотез по категориям с контекстом
+        const hypothesisLibrary = {
+            acquisition: {
+                web: [
+                    { title: "SEO оптимизация + контентная стратегия", description: "Улучшить видимость в поиске через релевантный контент, keywords, backlinking", impact: 2, effortWeb: 40, effortMobile: 999 },
+                    { title: "PPC кампании в Google Ads / Facebook Ads", description: "Запустить таргетированную рекламную кампанию на нужную аудиторию", impact: 1.5, effortWeb: 20, effortMobile: 20 },
+                    { title: "Упростить регистрацию: один клик / социальная авторизация", description: "Снизить фрикшн на шаге входа: Google auth, Apple Sign In, эмейл в одно поле", impact: 1.5, effortWeb: 25, effortMobile: 35 },
+                    { title: "Добавить социальное доказательство на страницу входа", description: "Показать количество активных юзеров, отзывы, case studies, логотипы компаний", impact: 1, effortWeb: 15, effortMobile: 15 },
+                ],
+                mobile: [
+                    { title: "ASO оптимизация (App Store Optimization)", description: "Улучшить название, описание, скриншоты, видео в App Store / Google Play для выше CTR", impact: 2, effortWeb: 999, effortMobile: 15 },
+                    { title: "Мобильная реклама: TikTok, YouTube Shorts", description: "Запустить вирусные кампании в мобильных соцсетях для молодой аудитории", impact: 2, effortWeb: 999, effortMobile: 25 },
+                    { title: "Первый экран: демо продукта без регистрации", description: "Позволить пользователю посмотреть core value раньше регистрации", impact: 1.5, effortWeb: 999, effortMobile: 40 },
+                    { title: "Deep linking из социальных медий", description: "Настроить правильные deep links для кампаний, позволить переходить в нужное место апа", impact: 1, effortWeb: 999, effortMobile: 30 },
+                ]
+            },
+            activation: {
+                web: [
+                    { title: "Интерактивный тур / демо приложения", description: "Показать основные фичи новым юзерам через наводящие тут, чтобы они доросли до первого 'ага'", impact: 2, effortWeb: 35, effortMobile: 45 },
+                    { title: "Снизить трение при первой покупке", description: "Упростить чекаут: 1-click checkout, сохранить карту, show trust signals (SSL, reviews)", impact: 2, effortWeb: 50, effortMobile: 60 },
+                    { title: "Персализированная главная страница по источнику трафика", description: "Показывать разный контент / предложение в зависимости от того откуда пришёл юзер", impact: 1.5, effortWeb: 40, effortMobile: 999 },
+                    { title: "Целевые email / SMS после регистрации", description: "Отправить серию писем: приветствие, value prop, первый экран, CTA к покупке", impact: 1.5, effortWeb: 20, effortMobile: 20 },
+                ],
+                mobile: [
+                    { title: "Ограничить функционал для незарегистрированных", description: "Заставить юзера пройти регистрацию / вход раньше, чтобы не потеря данные", impact: 1.5, effortWeb: 999, effortMobile: 20 },
+                    { title: "Push-уведомления для первого действия", description: "Отправить своевременный пуш когда юзер рядом с местом действия (геолокация)", impact: 1.5, effortWeb: 999, effortMobile: 40 },
+                    { title: "Магия онбординга: mini-game / gamification", description: "Сделать процесс ознакомления весёлым и обучающим через игровые элементы", impact: 1.5, effortWeb: 999, effortMobile: 60 },
+                ]
+            },
+            retention: {
+                web: [
+                    { title: "Email re-engagement кампании для спящих", description: "Регулярные письма для неактивных юзеров с персональными рекомендациями, специальные предложения", impact: 1.5, effortWeb: 20, effortMobile: 20 },
+                    { title: "Персонализировать контент по истории юзера", description: "Показывать фичи, товары, контент на основе прошлого поведения и предпочтений", impact: 2, effortWeb: 60, effortMobile: 60 },
+                    { title: "Добавить механику прогресса / геймификации", description: "Баллы, уровни, достижения, бордо лидеров, прогресс-бар для регулярного возврата", impact: 1, effortWeb: 45, effortMobile: 50 },
+                    { title: "Коммьюнити и социальные элементы", description: "Позволить юзерам создавать контент, комментировать, делиться, видеть друзей в приложении", impact: 1, effortWeb: 80, effortMobile: 100 },
+                ],
+                mobile: [
+                    { title: "Push-уведомления в нужный момент (момент истины)", description: "Отправлять пуши когда юзер выигрывает, получает скидку, или близко к делу завершения", impact: 2, effortWeb: 999, effortMobile: 30 },
+                    { title: "Динамические push тексты по сегменту", description: "Разные сообщения для разных когорт: новые юзеры, лояльные, рискующие уйти", impact: 1.5, effortWeb: 999, effortMobile: 40 },
+                    { title: "Локальные напоминания без интернета", description: "Сохранять данные локально и показывать напоминания / контент даже без сети", impact: 1, effortWeb: 999, effortMobile: 50 },
+                ]
+            },
+            monetization: {
+                web: [
+                    { title: "Оптимизировать цены: A/B тестировать ценовые точки", description: "Тестировать разные цены, bundle'ы, планы (Basic/Pro/Premium) для максимизации выручки", impact: 2.5, effortWeb: 30, effortMobile: 30 },
+                    { title: "Запустить upsell / cross-sell на критических экранах", description: "Рекомендовать premium, добавки, сопутствующие товары в нужные моменты воронки", impact: 2, effortWeb: 35, effortMobile: 35 },
+                    { title: "Создать иллюзию срочности: limited-time offers", description: "Временные скидки, лимитированные места, countdown таймеры для увеличения конверсии", impact: 1.5, effortWeb: 20, effortMobile: 20 },
+                    { title: "Программа лояльности / подписка", description: "Предложить подписку с понижающими ценами, exclusive benefits, удобство авто-платежей", impact: 1.5, effortWeb: 60, effortMobile: 60 },
+                ],
+                mobile: [
+                    { title: "In-app покупки и сетт подписки", description: "Внедрить in-app purchases, подписки, доп контент, версию Pro через мобильные платёжные системы", impact: 2.5, effortWeb: 999, effortMobile: 50 },
+                    { title: "Микротранзакции: вещи, баланс, премиум валюта", description: "Добавить внутренние покупки для мелких сумм: виртуальная валюта, скины, bonuses", impact: 1.5, effortWeb: 999, effortMobile: 40 },
+                    { title: "Реклама: banner / interstitial / rewarded", description: "Монетизировать через рекламу (Admob, Facebook Ads Network), особенно rewarded video", impact: 1.5, effortWeb: 999, effortMobile: 25 },
+                ]
+            }
+        };
+
+        let allHypotheses = [];
+        let userContext = {};
+
+        function goToStep(step) {
+            // Hide all steps
+            document.querySelectorAll('.wizard-step').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.progress-step').forEach(s => s.classList.remove('active'));
+            
+            // Show current step
+            document.getElementById('step' + step).classList.add('active');
+            document.querySelectorAll('.progress-step')[step - 1].classList.add('active');
+            
+            window.scrollTo(0, 0);
+        }
+
+        function generateHypotheses() {
+            // Validate all inputs
+            const productName = document.getElementById('productName').value;
+            const platform = document.getElementById('platform').value;
+            const teamSize = document.getElementById('teamSize').value;
+            const audience = document.getElementById('audience').value;
+            const mainMetric = document.getElementById('mainMetric').value;
+            const context = document.getElementById('context').value;
+            const budget = document.getElementById('budget').value;
+            const analytics = document.getElementById('analytics').value;
+
+            if (!productName || !platform || !teamSize || !audience || !mainMetric || !context || !budget) {
+                alert('Заполни все обязательные поля');
+                return;
+            }
+
+            // Собрать контекст
+            userContext = {
+                productName,
+                platform,
+                teamSize,
+                audience,
+                mainMetric,
+                context,
+                budget: parseInt(budget),
+                analytics,
+                previousAttempts: document.getElementById('previousAttempts').value,
+                previousResults: document.getElementById('previousResults').value,
+                painPoints: document.getElementById('painPoints').value,
+                priorities: {
+                    growth: document.getElementById('pri-growth').checked,
+                    retention: document.getElementById('pri-retention').checked,
+                    revenue: document.getElementById('pri-revenue').checked,
+                    engagement: document.getElementById('pri-engagement').checked
+                }
+            };
+
+            allHypotheses = [];
+
+            // Определить категории на основе метрик и приоритетов
+            const categories = [];
+            const metricLower = mainMetric.toLowerCase();
+            
+            if (metricLower.includes('signup') || metricLower.includes('dau') || userContext.priorities.growth) {
+                categories.push('acquisition');
+            }
+            if (metricLower.includes('activation') || metricLower.includes('activation') || userContext.priorities.engagement) {
+                categories.push('activation');
+            }
+            if (metricLower.includes('retention') || metricLower.includes('churn') || metricLower.includes('d7') || userContext.priorities.retention) {
+                categories.push('retention');
+            }
+            if (metricLower.includes('conversion') || metricLower.includes('arpu') || metricLower.includes('ltv') || metricLower.includes('revenue') || userContext.priorities.revenue) {
+                categories.push('monetization');
+            }
+
+            if (categories.length === 0) {
+                categories.push('retention', 'activation', 'monetization');
+            }
+
+            // Генерировать гипотезы из персонализированной библиотеки
+            const platformType = platform === 'mobile' || platform === 'hybrid' ? 'mobile' : 'web';
+            
+            categories.forEach(category => {
+                const hypotheses = hypothesisLibrary[category]?.[platformType] || [];
+                hypotheses.forEach(hyp => {
+                    // Выбрать effort на основе платформы
+                    let baseEffort = platformType === 'mobile' ? hyp.effortMobile : hyp.effortWeb;
+                    if (baseEffort === 999) return; // Пропустить если не применимо
+                    
+                    // Корректировать effort на основе размера команды
+                    const teamMultiplier = {
+                        'solo': 1.5,
+                        'small': 1.2,
+                        'medium': 1,
+                        'large': 0.8
+                    }[teamSize] || 1;
+                    
+                    // Корректировать effort на основе наличия аналитики
+                    const analyticsMultiplier = analytics === 'no' ? 1.3 : analytics === 'partial' ? 1.1 : 1;
+                    
+                    const effort = Math.round(baseEffort * teamMultiplier * analyticsMultiplier);
+                    
+                    // Reach зависит от размера аудитории
+                    const userScaleReach = {
+                        'small': 60,
+                        'medium': 75,
+                        'large': 85,
+                        'xlarge': 90
+                    }[document.getElementById('userScale').value] || 70;
+                    
+                    const reach = userScaleReach + Math.random() * 15 - 7;
+                    const impact = hyp.impact + (Math.random() * 0.4 - 0.2);
+                    const confidence = calculateConfidence(category, hyp.title, userContext);
+
+                    const rice = Math.round((reach * impact * confidence) / effort * 10) / 10;
+
+                    // Проверить, не пробовали ли уже такое
+                    const wasAttempted = userContext.previousAttempts.toLowerCase().includes(hyp.title.slice(0, 5).toLowerCase());
+                    
+                    allHypotheses.push({
+                        title: hyp.title,
+                        description: hyp.description,
+                        reach: Math.round(reach),
+                        impact: Math.round(impact * 100) / 100,
+                        confidence: Math.round(confidence * 100),
+                        effort: effort,
+                        rice: rice,
+                        category: category,
+                        wasAttempted: wasAttempted,
+                        platformApplicable: platform
+                    });
+                });
+            });
+
+            // Сортировать по RICE
+            allHypotheses.sort((a, b) => b.rice - a.rice);
+
+            // Показать результаты
+            displayResults();
+        }
+
+        function calculateConfidence(category, title, context) {
+            let confidence = 0.55;
+            
+            // Повышать confidence если есть аналитика
+            if (context.analytics === 'yes') confidence += 0.15;
+            if (context.analytics === 'partial') confidence += 0.08;
+            
+            // Повышать если есть A/B тестирование
+            if (document.getElementById('abTesting').value === 'yes') confidence += 0.1;
+            
+            // Снижать если гипотеза уже была пробована и не сработала
+            if (context.previousAttempts && context.previousAttempts.includes(title.slice(0, 5))) {
+                const results = context.previousResults.toLowerCase();
+                if (results.includes('не помогал') || results.includes('не сработал')) {
+                    confidence -= 0.2;
+                }
+            }
+            
+            return Math.max(0.2, Math.min(1, confidence));
+        }
+
+        function displayResults() {
+            // Скрыть wizard, показать результаты
+            document.getElementById('wizardContainer').style.display = 'none';
+            document.getElementById('progressIndicator').style.display = 'none';
+            document.getElementById('hypothesesSection').style.display = 'block';
+            document.getElementById('emptyState').style.display = 'none';
+
+            const list = document.getElementById('hypothesesList');
+            list.innerHTML = '';
+
+            document.getElementById('totalCount').textContent = allHypotheses.length;
+
+            // Обновить summary
+            const platformLabel = {
+                'web': 'Web',
+                'mobile': 'Mobile',
+                'hybrid': 'Hybrid',
+                'saas': 'SaaS B2B'
+            }[userContext.platform] || userContext.platform;
+            
+            const audienceLabel = {
+                'b2c-mass': 'B2C массовая',
+                'b2c-premium': 'B2C премиум',
+                'b2b-sme': 'B2B малый бизнес',
+                'b2b-enterprise': 'B2B Enterprise',
+                'mixed': 'Смешанная'
+            }[userContext.audience] || userContext.audience;
+            
+            document.getElementById('contextSummary').textContent = 
+                `${userContext.productName} • ${platformLabel} • ${audienceLabel}`;
+
+            const platformLabel = {
+                'web': 'Web',
+                'mobile': 'Mobile',
+                'hybrid': 'Hybrid',
+                'saas': 'SaaS B2B'
+            }[userContext.platform] || userContext.platform;
+
+            allHypotheses.forEach(h => {
+                const riceClass = h.rice > 50 ? 'medium' : h.rice > 20 ? '' : 'low';
+                const categoryLabel = {
+                    'acquisition': 'Привлечение',
+                    'activation': 'Активация',
+                    'retention': 'Удержание',
+                    'monetization': 'Монетизация'
+                }[h.category] || h.category;
+
+                const attemptedBadge = h.wasAttempted ? '<span class="tag" style="background-color: var(--warning); color: white; border-color: var(--warning);">⚠️ Уже пробовали</span>' : '';
+
+                const card = document.createElement('div');
+                card.className = 'hypothesis-card';
+                card.innerHTML = `
+                    <div class="card-header">
+                        <div class="hypothesis-title">${h.title}</div>
+                        <div class="rice-score ${riceClass}">${h.rice}</div>
+                    </div>
+                    <div class="card-body">
+                        <div class="hypothesis-description">${h.description}</div>
+                        <div style="margin: 12px 0 0 0; padding: 12px; background-color: var(--bg-primary); border-radius: 8px; border: 1px solid var(--border-color); font-size: 12px; color: var(--text-secondary);">
+                            <strong>Для:</strong> ${userContext.productName} (${platformLabel}) • <strong>Бюджет:</strong> ${userContext.budget === 5 ? '1-2 дня' : userContext.budget === 20 ? '1 нед.' : userContext.budget === 40 ? '2 нед.' : userContext.budget === 80 ? '1 месяц' : 'неограниченно'}
+                        </div>
+                        <div class="rice-breakdown">
+                            <div class="rice-item">
+                                <div class="rice-label">Reach</div>
+                                <div class="rice-value">${h.reach}%</div>
+                                <div class="stat-bar">
+                                    <div class="stat-bar-fill"><div class="stat-bar-inner" style="width: ${h.reach}%"></div></div>
+                                </div>
+                            </div>
+                            <div class="rice-item">
+                                <div class="rice-label">Impact</div>
+                                <div class="rice-value">${h.impact}x</div>
+                            </div>
+                            <div class="rice-item">
+                                <div class="rice-label">Confidence</div>
+                                <div class="rice-value">${h.confidence}%</div>
+                            </div>
+                            <div class="rice-item">
+                                <div class="rice-label">Effort</div>
+                                <div class="rice-value">${h.effort}h</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <span class="tag category">${categoryLabel}</span>
+                        <span class="tag">ROI: ${Math.round((h.rice / h.effort) * 10) / 10}</span>
+                        ${attemptedBadge}
+                        <button class="copy-button" onclick="copyToClipboard(event, '${h.title.replace(/'/g, "\\'")}')"
+                                title="Скопировать в буфер обмена">📋 Копировать</button>
+                    </div>
+                `;
+                list.appendChild(card);
+            });
+        }
+
+        function sortHypotheses() {
+            const sortBy = document.getElementById('sortBy').value;
+
+            switch(sortBy) {
+                case 'rice':
+                    allHypotheses.sort((a, b) => b.rice - a.rice);
+                    break;
+                case 'impact':
+                    allHypotheses.sort((a, b) => b.impact - a.impact);
+                    break;
+                case 'reach':
+                    allHypotheses.sort((a, b) => b.reach - a.reach);
+                    break;
+                case 'effort':
+                    allHypotheses.sort((a, b) => a.effort - b.effort);
+                    break;
+            }
+
+            displayResults();
+        }
+
+        function copyToClipboard(event, text) {
+            navigator.clipboard.writeText(text).then(() => {
+                const btn = event.target;
+                btn.classList.add('copied');
+                btn.textContent = '✓ Скопировано';
+                setTimeout(() => {
+                    btn.classList.remove('copied');
+                    btn.textContent = '📋 Копировать';
+                }, 2000);
+            });
+        }
+
+        function resetAndGoBack() {
+            document.getElementById('wizardContainer').style.display = 'block';
+            document.getElementById('progressIndicator').style.display = 'flex';
+            document.getElementById('hypothesesSection').style.display = 'none';
+            
+            // Reset all inputs
+            document.getElementById('productName').value = '';
+            document.getElementById('platform').value = '';
+            document.getElementById('teamSize').value = '';
+            document.getElementById('audience').value = '';
+            document.getElementById('userScale').value = '';
+            document.getElementById('mainMetric').value = '';
+            document.getElementById('metricValue').value = '';
+            document.getElementById('targetGrowth').value = '15';
+            document.getElementById('context').value = '';
+            document.getElementById('budget').value = '';
+            document.getElementById('abTesting').value = '';
+            document.getElementById('analytics').value = '';
+            document.getElementById('previousAttempts').value = '';
+            document.getElementById('previousResults').value = '';
+            document.getElementById('painPoints').value = '';
+            document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
+            
+            allHypotheses = [];
+            goToStep(1);
+        }
+    </script>
+</body>
+</html>
